@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>대한민국 N수저 생존기 — 한국형 인생 & 커리어 시뮬레이터</title>
+  <title>대한민국 N수저 생존기: 환생 가챠 에디션</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Noto Sans KR & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -17,14 +17,6 @@
         extend: {
           fontFamily: {
             sans: ['"Noto Sans KR"', 'Inter', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              50: '#eef2ff',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-            }
           }
         }
       }
@@ -34,275 +26,492 @@
     body {
       font-family: 'Noto Sans KR', 'Inter', sans-serif;
       -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
     }
-    /* Custom subtle scrollbar for event log */
-    .log-scroll::-webkit-scrollbar {
-      width: 5px;
-    }
-    .log-scroll::-webkit-scrollbar-track {
-      background: transparent;
-    }
+
+    /* Custom Scrollbar */
+    .log-scroll::-webkit-scrollbar { width: 5px; }
+    .log-scroll::-webkit-scrollbar-track { background: transparent; }
     .log-scroll::-webkit-scrollbar-thumb {
       background-color: rgba(148, 163, 184, 0.3);
       border-radius: 9999px;
     }
+
+    /* Animations */
     @keyframes fadeSlideUp {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .animate-entry {
-      animation: fadeSlideUp 0.28s ease-out forwards;
+    .animate-entry { animation: fadeSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+    @keyframes screenShake {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      15% { transform: translate(-6px, -4px) rotate(-0.8deg); }
+      30% { transform: translate(6px, 3px) rotate(0.8deg); }
+      45% { transform: translate(-5px, 4px) rotate(-0.5deg); }
+      60% { transform: translate(5px, -3px) rotate(0.5deg); }
+      75% { transform: translate(-3px, 2px) rotate(-0.3deg); }
+    }
+    .animate-shake { animation: screenShake 0.48s ease-in-out; }
+
+    @keyframes urHoloGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Rarity Card Styling */
+    .rarity-N {
+      background: linear-gradient(135deg, rgba(51,65,85,0.45), rgba(30,41,59,0.7));
+      border: 1.5px solid rgba(148,163,184,0.45);
+    }
+    .rarity-R {
+      background: linear-gradient(135deg, rgba(29,78,216,0.3), rgba(15,23,42,0.85));
+      border: 1.5px solid rgba(59,130,246,0.7);
+      box-shadow: 0 0 14px rgba(59,130,246,0.22);
+    }
+    .rarity-SR {
+      background: linear-gradient(135deg, rgba(126,34,206,0.35), rgba(15,23,42,0.9));
+      border: 1.5px solid rgba(192,132,252,0.85);
+      box-shadow: 0 0 18px rgba(168,85,247,0.35);
+    }
+    .rarity-SSR {
+      background: linear-gradient(135deg, rgba(217,119,6,0.42), rgba(120,53,15,0.45), rgba(15,23,42,0.92));
+      border: 2px solid rgba(251,191,36,0.95);
+      box-shadow: 0 0 24px rgba(245,158,11,0.5);
+    }
+    .rarity-UR {
+      background: linear-gradient(125deg, #ff0080, #ff8c00, #ffd700, #00e676, #00b0ff, #d500f9);
+      background-size: 300% 300%;
+      animation: urHoloGlow 3s ease infinite;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 30px rgba(236,72,153,0.75), 0 0 45px rgba(56,189,248,0.5);
+    }
+    .rarity-UR-inner {
+      background: rgba(10, 14, 26, 0.86);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Slot Machine Reel Blur */
+    .slot-spinning {
+      filter: blur(1.5px);
+      transform: scale(1.03);
+      transition: all 0.1s;
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-200 selection:bg-indigo-500 selection:text-white">
+<body id="appBody" class="bg-slate-950 text-slate-100 min-h-screen selection:bg-fuchsia-500 selection:text-white">
 
-  <!-- Main Container (Mobile-first centered 640px max-width) -->
-  <div class="max-w-[640px] mx-auto px-4 py-5 pb-24 flex flex-col min-h-screen">
+  <!-- Confetti Particle Canvas -->
+  <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
 
-    <!-- Top Navigation / Header -->
-    <header class="flex items-center justify-between mb-5">
+  <!-- Toast Notification -->
+  <div id="toastBox" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300">
+    <div id="toastMsg" class="px-4 py-2.5 rounded-2xl bg-slate-900/95 text-white text-xs font-bold shadow-2xl border border-indigo-500/50 backdrop-blur-md">
+      알림 메시지
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="max-w-[660px] mx-auto px-3.5 sm:px-5 py-4 pb-28 flex flex-col min-h-screen">
+
+    <!-- Top Header Bar -->
+    <header class="flex items-center justify-between gap-2 mb-4 bg-slate-900/80 border border-slate-800/90 rounded-2xl px-3.5 py-2.5 backdrop-blur-md shadow-lg">
       <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-extrabold text-base shadow-md">
-          🇰🇷
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-fuchsia-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white font-black text-base shadow-md">
+          🎰
         </div>
         <div>
-          <h1 class="text-base sm:text-lg font-extrabold tracking-tight leading-tight">대한민국 N수저 생존기</h1>
-          <p class="text-[11px] text-slate-500 dark:text-slate-400">통계 기반 한국형 인생 & 커리어 시뮬레이터</p>
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-sm sm:text-base font-black tracking-tight text-white">대한민국 N수저 생존기</h1>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-gradient-to-r from-amber-500 to-pink-500 text-slate-950">GACHA</span>
+          </div>
+          <p class="text-[10px] text-slate-400">전생 유물 뽑기 × 한국형 인생 로그라이트</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <!-- Collection / Encyclopedia Button -->
-        <button id="btnOpenCollection" type="button"
-          class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1.5 shadow-sm">
-          <span>🏆</span>
-          <span>인생 도감</span>
-          <span id="collectionBadge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-bold">0</span>
+      <div class="flex items-center gap-1.5">
+        <!-- Reincarnation Diamond Counter -->
+        <div class="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-cyan-500/40 flex items-center gap-1.5 shadow-inner">
+          <span class="text-xs">💎</span>
+          <span id="headerDiamondCount" class="text-xs font-black text-cyan-300">1,000</span>
+        </div>
+
+        <!-- Encyclopedia Modal Button -->
+        <button id="btnOpenEncyclopedia" type="button"
+          class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition flex items-center gap-1 cursor-pointer">
+          <span>📖</span>
+          <span class="hidden sm:inline">도감</span>
+          <span id="headerDexRatio" class="text-[10px] text-amber-400 font-extrabold">0/44</span>
         </button>
 
-        <!-- Theme Toggle Button -->
-        <button id="btnToggleTheme" type="button" aria-label="테마 전환"
-          class="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition shadow-sm text-sm">
-          <span id="themeIcon">☀️</span>
+        <!-- Sound Toggle -->
+        <button id="btnToggleSound" type="button" aria-label="사운드 토글"
+          class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs transition cursor-pointer">
+          <span id="soundIcon">🔊</span>
         </button>
       </div>
     </header>
 
-    <!-- Custom Toast Notification (No alert() used) -->
-    <div id="toastBox" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300">
-      <div id="toastMsg" class="px-4 py-2.5 rounded-2xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold shadow-xl border border-slate-700 dark:border-slate-300">
-        알림 메시지
+    <!-- ========================================================= -->
+    <!-- SCREEN 1: LOBBY (META GACHA + LOADOUT + BIRTH LAUNCHER) -->
+    <!-- ========================================================= -->
+    <section id="screenLobby" class="flex-1 flex flex-col gap-4 animate-entry">
+
+      <!-- Lobby Navigation Tabs -->
+      <div class="grid grid-cols-2 gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl">
+        <button id="tabLobbyPlay" type="button"
+          class="py-2.5 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow transition cursor-pointer">
+          🎲 환생 준비 & 유물 장착
+        </button>
+        <button id="tabLobbyGacha" type="button"
+          class="py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-slate-400 hover:text-white transition cursor-pointer flex items-center justify-center gap-1.5">
+          <span>✨ 전생의 업보 가챠</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40">UR</span>
+        </button>
+      </div>
+
+      <!-- SUB-VIEW A: REINCARNATION SETUP & EQUIPPED TRAITS -->
+      <div id="viewLobbyPlay" class="flex flex-col gap-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
+          <div class="absolute -right-12 -top-12 w-40 h-40 bg-indigo-600/15 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 mb-3">
+            <span>🇰🇷 K-생존 로그라이트 시뮬레이터</span>
+          </div>
+
+          <h2 class="text-xl sm:text-2xl font-black tracking-tight mb-2 leading-snug text-white">
+            전생의 유물을 장착하고<br/>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300">새로운 대한민국 인생</span>을 뽑으세요!
+          </h2>
+          <p class="text-xs text-slate-400 leading-relaxed mb-5">
+            매 생애마다 수저 계급·출생지·재능이 3릴 슬롯머신으로 결정됩니다. 생을 마감하면 얻는 💎환생 다이아로 전생 특성을 뽑아 다음 생의 확률을 비틀어 보세요.
+          </p>
+
+          <!-- Equipped Relics Slots (Max 3) -->
+          <div class="mb-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-extrabold text-slate-200">🔮 장착 중인 환생 유물 (<span id="equippedCountText">0</span>/3)</span>
+              <button type="button" onclick="switchLobbyTab('gacha')" class="text-[11px] font-bold text-amber-400 hover:underline cursor-pointer">
+                + 새 유물 뽑으러 가기 →
+              </button>
+            </div>
+            <div id="equippedSlotsGrid" class="grid grid-cols-3 gap-2">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Owned Relics Quick Selector -->
+          <div class="mb-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-400">🎒 보유 중인 전생 유물 (클릭하여 장착/해제)</span>
+              <span id="ownedRelicCounter" class="text-[11px] text-slate-500">0 / 24종 보유</span>
+            </div>
+            <div id="ownedRelicsList" class="max-h-[185px] overflow-y-auto log-scroll grid grid-cols-1 sm:grid-cols-2 gap-2 pr-1">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Name Input & Launch Button -->
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <input id="inputPlayerName" type="text" maxlength="10" placeholder="이름 입력 (공란 시 랜덤 생성)"
+              class="sm:w-48 px-4 py-3.5 rounded-2xl text-xs sm:text-sm bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <button id="btnOpenBirthSlot" type="button"
+              class="flex-1 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-fuchsia-600 via-indigo-600 to-cyan-600 hover:brightness-110 active:scale-[0.99] text-white font-black text-sm sm:text-base shadow-lg shadow-indigo-600/30 transition cursor-pointer flex items-center justify-center gap-2">
+              <span>🎰 이번 생 스펙 슬롯 돌리기 (출생)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUB-VIEW B: META GACHA (REINCARNATION RELIC SUMMON) -->
+      <div id="viewLobbyGacha" class="hidden flex flex-col gap-4">
+        <div class="bg-slate-900/95 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
+          <div class="flex items-start justify-between gap-2 mb-3">
+            <div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">LIMITED BANNER</span>
+              <h2 class="text-xl font-black text-white mt-1.5">✨ 전생의 업보: 환생 유물 소환</h2>
+              <p class="text-xs text-slate-400 mt-0.5">영구 패시브 특성 24종 출현! 10연차 시 <strong class="text-purple-400">SR 이상 확정</strong></p>
+            </div>
+            <div class="text-right bg-slate-950 border border-slate-800 px-3 py-2 rounded-2xl">
+              <div class="text-[10px] text-slate-400">SSR+ 천장 카운트</div>
+              <div class="text-sm font-black text-amber-400"><span id="pityCounterText">0</span> / 30</div>
+            </div>
+          </div>
+
+          <!-- Drop Rates Bar -->
+          <div class="grid grid-cols-5 gap-1 text-center text-[10px] font-bold mb-4 bg-slate-950/90 p-2 rounded-2xl border border-slate-800">
+            <div class="py-1 rounded-lg bg-pink-500/15 text-pink-300">UR 1.5%</div>
+            <div class="py-1 rounded-lg bg-amber-500/15 text-amber-300">SSR 6.5%</div>
+            <div class="py-1 rounded-lg bg-purple-500/15 text-purple-300">SR 22%</div>
+            <div class="py-1 rounded-lg bg-blue-500/15 text-blue-300">R 35%</div>
+            <div class="py-1 rounded-lg bg-slate-700/40 text-slate-300">N 35%</div>
+          </div>
+
+          <!-- Gacha Stage / Pull Results Display -->
+          <div id="gachaStageBox" class="min-h-[210px] bg-slate-950 border border-slate-800/90 rounded-2xl p-4 mb-4 flex flex-col items-center justify-center">
+            <div class="text-center text-slate-500 text-xs space-y-1.5">
+              <div class="text-3xl mb-2">🔮</div>
+              <p class="font-bold text-slate-300">환생의 제단이 준비되었습니다.</p>
+              <p>중복 유물 획득 시 자동으로 레벨업(강화)되어 효과가 증폭됩니다!</p>
+            </div>
+          </div>
+
+          <!-- Summon Buttons -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <button id="btnSummon1" type="button"
+              class="py-3.5 px-3 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] border border-slate-700 text-white font-extrabold text-xs sm:text-sm transition cursor-pointer flex flex-col items-center">
+              <span>✨ 1회 소환</span>
+              <span class="text-[11px] text-cyan-300 font-bold mt-0.5">💎 100 다이아</span>
+            </button>
+            <button id="btnSummon10" type="button"
+              class="py-3.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-pink-600 hover:brightness-110 active:scale-[0.98] text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition cursor-pointer flex flex-col items-center">
+              <span>🔥 10연차 대소환 (SR+ 확정)</span>
+              <span class="text-[11px] text-slate-950/80 font-extrabold mt-0.5">💎 900 다이아 (10% 할인)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: BIRTH 3-REEL SLOT MACHINE -->
+    <!-- ========================================================= -->
+    <div id="modalBirthSlot" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-slate-900 border-2 border-indigo-500/50 rounded-3xl max-w-[500px] w-full p-6 shadow-2xl animate-entry text-center">
+        <span class="px-3 py-1 rounded-full text-[11px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+          🎰 DESTINY SLOT MACHINE
+        </span>
+        <h3 class="text-xl sm:text-2xl font-black text-white mt-2 mb-1">이번 생의 초기 스펙 추첨</h3>
+        <p class="text-xs text-slate-400 mb-5">3개의 릴이 멈추면 당신의 대한민국 출발선이 결정됩니다!</p>
+
+        <!-- 3 Reels -->
+        <div class="grid grid-cols-3 gap-2.5 mb-5">
+          <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center justify-center min-h-[115px]">
+            <span class="text-[10px] font-bold text-slate-500 mb-1.5">① 수저 계급</span>
+            <div id="reelSpoonIcon" class="text-2xl sm:text-3xl mb-1">❓</div>
+            <div id="reelSpoonText" class="text-xs font-black text-amber-300">추첨 중...</div>
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center justify-center min-h-[115px]">
+            <span class="text-[10px] font-bold text-slate-500 mb-1.5">② 출생 지역</span>
+            <div id="reelRegionIcon" class="text-2xl sm:text-3xl mb-1">🏙️</div>
+            <div id="reelRegionText" class="text-xs font-black text-cyan-300">추첨 중...</div>
+          </div>
+          <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col items-center justify-center min-h-[115px]">
+            <span class="text-[10px] font-bold text-slate-500 mb-1.5">③ 선천적 재능</span>
+            <div id="reelTalentIcon" class="text-2xl sm:text-3xl mb-1">⚡</div>
+            <div id="reelTalentText" class="text-xs font-black text-pink-300">추첨 중...</div>
+          </div>
+        </div>
+
+        <div id="slotResultSummary" class="hidden bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5 mb-4 text-xs text-slate-300 leading-relaxed">
+          <!-- Populated after reels stop -->
+        </div>
+
+        <button id="btnConfirmBirth" type="button" disabled
+          class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 disabled:opacity-40 text-white font-black text-sm shadow-lg transition cursor-pointer">
+          🚀 이 운명으로 인생 시작하기
+        </button>
       </div>
     </div>
 
     <!-- ========================================================= -->
-    <!-- SCREEN 1: START / INTRO SCREEN -->
-    <!-- ========================================================= -->
-    <section id="screenStart" class="flex-1 flex flex-col justify-center">
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm">
-        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 mb-4">
-          <span>🎲 실제 대한민국 통계 확률 반영</span>
-        </div>
-
-        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-3 leading-snug">
-          당신은 대한민국의<br/>
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-violet-500">어떤 수저</span>로 태어날까요?
-        </h2>
-
-        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
-          출생 지역, 부모의 자산 계급, 선천적 재능은 철저히 무작위 확률로 결정됩니다.
-          치열한 입시와 취업 시장, 부동산과 투자, 결혼과 건강의 기로에서 당신만의 인생 연대기를 완성해 보세요.
-        </p>
-
-        <!-- Probability Preview Table -->
-        <div class="bg-slate-50 dark:bg-slate-950/70 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 mb-6">
-          <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2.5 flex items-center justify-between">
-            <span>📊 대한민국 출생 수저 확률 테이블</span>
-            <span>통계청 가계금융복지조사 기반</span>
-          </div>
-          <div class="grid grid-cols-5 gap-1.5 text-center text-[11px]">
-            <div class="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
-              <div class="font-bold text-cyan-600 dark:text-cyan-400">💎 다이아</div>
-              <div class="text-slate-500 dark:text-slate-400 mt-0.5">1%</div>
-            </div>
-            <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
-              <div class="font-bold text-amber-600 dark:text-amber-400">🥇 금수저</div>
-              <div class="text-slate-500 dark:text-slate-400 mt-0.5">4%</div>
-            </div>
-            <div class="p-2 rounded-xl bg-slate-400/10 border border-slate-400/30">
-              <div class="font-bold text-slate-600 dark:text-slate-300">🥈 은수저</div>
-              <div class="text-slate-500 dark:text-slate-400 mt-0.5">15%</div>
-            </div>
-            <div class="p-2 rounded-xl bg-orange-700/10 border border-orange-700/30">
-              <div class="font-bold text-orange-700 dark:text-orange-400">🥉 동수저</div>
-              <div class="text-slate-500 dark:text-slate-400 mt-0.5">40%</div>
-            </div>
-            <div class="p-2 rounded-xl bg-stone-500/10 border border-stone-500/30">
-              <div class="font-bold text-stone-600 dark:text-stone-400">🥔 흙수저</div>
-              <div class="text-slate-500 dark:text-slate-400 mt-0.5">40%</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Optional Name Input -->
-        <div class="mb-5">
-          <label for="inputPlayerName" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-            이름 (비워두면 한국인 무작위 이름 생성)
-          </label>
-          <input id="inputPlayerName" type="text" maxlength="10" placeholder="예: 김민준, 이서연..."
-            class="w-full px-4 py-3 rounded-2xl text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
-        </div>
-
-        <button id="btnStartGame" type="button"
-          class="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.99] text-white font-bold text-base shadow-lg shadow-indigo-600/20 transition cursor-pointer">
-          🎲 새로운 인생 시작하기 (출생)
-        </button>
-      </div>
-    </section>
-
-    <!-- ========================================================= -->
     <!-- SCREEN 2: ACTIVE GAMEPLAY SCREEN -->
     <!-- ========================================================= -->
-    <section id="screenGame" class="hidden flex-1 flex flex-col gap-3.5">
+    <section id="screenGame" class="hidden flex-1 flex flex-col gap-3">
 
-      <!-- Character Identity & Age Card -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-sm">
-        <div class="flex items-start justify-between gap-2 mb-3">
+      <!-- Character Status Header Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-lg">
+        <div class="flex items-start justify-between gap-2 mb-2.5">
           <div>
             <div class="flex flex-wrap items-center gap-1.5 mb-1">
-              <span id="badgeSpoon" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-500">🥇 금수저</span>
-              <span id="badgeRegion" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">서울 강남3구</span>
-              <span id="badgeStage" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">유아기</span>
+              <span id="badgeSpoon" class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 text-amber-300">🥇 금수저</span>
+              <span id="badgeRegion" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300">서울 강남3구</span>
+              <span id="badgeTalent" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-fuchsia-500/15 text-fuchsia-300">천재적 두뇌</span>
             </div>
-            <h2 class="text-lg sm:text-xl font-extrabold flex items-center gap-2">
+            <h2 class="text-lg sm:text-xl font-black flex items-center gap-2 text-white">
               <span id="charName">김도윤</span>
-              <span class="text-sm font-normal text-slate-400">|</span>
-              <span id="charAge" class="text-indigo-600 dark:text-indigo-400">0세</span>
-              <span id="charYear" class="text-xs font-medium text-slate-400">(2002년생)</span>
+              <span class="text-slate-600 text-sm">|</span>
+              <span id="charAge" class="text-cyan-400">0세</span>
+              <span id="charYear" class="text-xs font-medium text-slate-500">(2002년)</span>
             </h2>
           </div>
 
           <button id="btnGiveUp" type="button"
-            class="px-2.5 py-1 rounded-xl text-[11px] font-medium text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition">
-            인생 포기
+            class="px-2.5 py-1 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer">
+            인생 마감
           </button>
         </div>
 
-        <!-- Job / Education / Relationship Status Strip -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs bg-slate-50 dark:bg-slate-950/70 p-3 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 mb-3.5">
+        <!-- Equipped Relics Mini Strip -->
+        <div id="activeRelicsBar" class="flex flex-wrap gap-1.5 mb-3">
+          <!-- Active relic chips -->
+        </div>
+
+        <!-- Career & Money Strip -->
+        <div class="grid grid-cols-3 gap-2 text-xs bg-slate-950 p-2.5 rounded-2xl border border-slate-800/90 mb-3">
           <div>
-            <span class="text-[10px] text-slate-400 block">학력 / 소속</span>
-            <span id="charStatus" class="font-bold text-slate-800 dark:text-slate-200 truncate block">미취학 아동</span>
+            <span class="text-[10px] text-slate-500 block">학력 / 직업</span>
+            <span id="charStatus" class="font-bold text-slate-200 truncate block">미취학 아동</span>
           </div>
           <div>
-            <span class="text-[10px] text-slate-400 block">연봉 / 소득</span>
-            <span id="charSalary" class="font-bold text-emerald-600 dark:text-emerald-400 block">0원</span>
+            <span class="text-[10px] text-slate-500 block">연봉 / 현금흐름</span>
+            <span id="charSalary" class="font-bold text-emerald-400 truncate block">0원</span>
           </div>
-          <div class="col-span-2 sm:col-span-1">
-            <span class="text-[10px] text-slate-400 block">순자산 (현금+부동산)</span>
-            <span id="charNetWorth" class="font-bold text-indigo-600 dark:text-indigo-400 block">0원</span>
+          <div>
+            <span class="text-[10px] text-slate-500 block">순자산</span>
+            <span id="charNetWorth" class="font-black text-indigo-400 truncate block">0원</span>
           </div>
         </div>
 
-        <!-- 4 Core Stat Bars -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <!-- Health -->
-          <div class="bg-slate-50 dark:bg-slate-950/50 p-2.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/60">
-            <div class="flex justify-between text-[11px] font-semibold mb-1">
-              <span class="text-slate-500 dark:text-slate-400">❤️ 건강</span>
-              <span id="statHealthVal" class="font-bold">80</span>
+        <!-- 4 Core Stats -->
+        <div class="grid grid-cols-4 gap-2">
+          <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800/70">
+            <div class="flex justify-between text-[10px] font-bold mb-1">
+              <span class="text-slate-400">❤️ 건강</span>
+              <span id="statHealthVal" class="text-rose-400">80</span>
             </div>
-            <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div id="statHealthBar" class="h-full bg-rose-500 rounded-full transition-all duration-300" style="width: 80%"></div>
-            </div>
-          </div>
-
-          <!-- Happiness / Mental -->
-          <div class="bg-slate-50 dark:bg-slate-950/50 p-2.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/60">
-            <div class="flex justify-between text-[11px] font-semibold mb-1">
-              <span class="text-slate-500 dark:text-slate-400">😊 행복/멘탈</span>
-              <span id="statHappyVal" class="font-bold">75</span>
-            </div>
-            <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div id="statHappyBar" class="h-full bg-amber-400 rounded-full transition-all duration-300" style="width: 75%"></div>
+            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="statHealthBar" class="h-full bg-rose-500 rounded-full transition-all duration-300" style="width:80%"></div>
             </div>
           </div>
-
-          <!-- Intellect / Spec -->
-          <div class="bg-slate-50 dark:bg-slate-950/50 p-2.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/60">
-            <div class="flex justify-between text-[11px] font-semibold mb-1">
-              <span class="text-slate-500 dark:text-slate-400">🧠 역량/스펙</span>
-              <span id="statSmartVal" class="font-bold">50</span>
+          <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800/70">
+            <div class="flex justify-between text-[10px] font-bold mb-1">
+              <span class="text-slate-400">😊 멘탈</span>
+              <span id="statHappyVal" class="text-amber-400">75</span>
             </div>
-            <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div id="statSmartBar" class="h-full bg-indigo-500 rounded-full transition-all duration-300" style="width: 50%"></div>
+            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="statHappyBar" class="h-full bg-amber-400 rounded-full transition-all duration-300" style="width:75%"></div>
             </div>
           </div>
-
-          <!-- Charm / Network -->
-          <div class="bg-slate-50 dark:bg-slate-950/50 p-2.5 rounded-2xl border border-slate-200/50 dark:border-slate-800/60">
-            <div class="flex justify-between text-[11px] font-semibold mb-1">
-              <span class="text-slate-500 dark:text-slate-400">✨ 매력/인맥</span>
-              <span id="statCharmVal" class="font-bold">50</span>
+          <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800/70">
+            <div class="flex justify-between text-[10px] font-bold mb-1">
+              <span class="text-slate-400">🧠 역량</span>
+              <span id="statSmartVal" class="text-indigo-400">50</span>
             </div>
-            <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div id="statCharmBar" class="h-full bg-teal-500 rounded-full transition-all duration-300" style="width: 50%"></div>
+            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="statSmartBar" class="h-full bg-indigo-500 rounded-full transition-all duration-300" style="width:50%"></div>
+            </div>
+          </div>
+          <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800/70">
+            <div class="flex justify-between text-[10px] font-bold mb-1">
+              <span class="text-slate-400">✨ 인맥</span>
+              <span id="statCharmVal" class="text-teal-400">50</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="statCharmBar" class="h-full bg-teal-500 rounded-full transition-all duration-300" style="width:50%"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Interactive Event Decision Card (Appears when an event requires a choice) -->
-      <div id="eventCard" class="hidden bg-gradient-to-b from-indigo-50/90 to-white dark:from-indigo-950/40 dark:to-slate-900 border-2 border-indigo-500/40 rounded-3xl p-5 shadow-md animate-entry">
-        <div class="flex items-center justify-between mb-2">
-          <span id="eventTag" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-600 text-white">중대 기로</span>
-          <span id="eventAgeBadge" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400">19세 이벤트</span>
+      <!-- Mode Switch Tabs inside Gameplay: [인생 진행] vs [🎰 인생 역전 가챠] -->
+      <div class="grid grid-cols-2 gap-2 p-1 bg-slate-900 border border-slate-800 rounded-2xl">
+        <button id="tabGameLife" type="button"
+          class="py-2 rounded-xl text-xs font-extrabold bg-indigo-600 text-white transition cursor-pointer">
+          📜 인생 연대기 & 집중 활동
+        </button>
+        <button id="tabGameGamble" type="button"
+          class="py-2 rounded-xl text-xs font-extrabold text-amber-300 hover:bg-slate-800 transition cursor-pointer flex items-center justify-center gap-1.5">
+          <span>🎰 인생 역전 가챠</span>
+          <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/40">HOT</span>
+        </button>
+      </div>
+
+      <!-- GAMEPLAY VIEW 1: LIFE CHRONICLE & EVENTS -->
+      <div id="viewGameLife" class="flex-1 flex flex-col gap-3">
+        <!-- Pending Major Event Card -->
+        <div id="eventCard" class="hidden bg-gradient-to-b from-indigo-950/90 to-slate-900 border-2 border-indigo-500/60 rounded-3xl p-4 sm:p-5 shadow-xl animate-entry">
+          <div class="flex items-center justify-between mb-1.5">
+            <span id="eventTag" class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-indigo-600 text-white">중대 기로</span>
+            <span id="eventAgeBadge" class="text-xs font-bold text-indigo-300">19세 이벤트</span>
+          </div>
+          <h3 id="eventTitle" class="text-base sm:text-lg font-black text-white mb-1">이벤트 제목</h3>
+          <p id="eventDesc" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-3.5">이벤트 설명</p>
+          <div id="eventChoices" class="flex flex-col gap-2"></div>
         </div>
-        <h3 id="eventTitle" class="text-base sm:text-lg font-extrabold mb-1.5">대망의 대학수학능력시험</h3>
-        <p id="eventDesc" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
-          수능 날 아침이 밝았습니다. 그동안 쌓아온 역량과 컨디션에 따라 결과가 결정됩니다.
-        </p>
-        <div id="eventChoices" class="flex flex-col gap-2">
-          <!-- Choice buttons injected via JS -->
+
+        <!-- Focus Activity Selector -->
+        <div id="focusPanel" class="bg-slate-900 border border-slate-800 rounded-3xl p-3.5 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-extrabold text-slate-300">🎯 올해의 집중 활동</span>
+            <span class="text-[10px] text-slate-500">매년 능력치/자산에 반영</span>
+          </div>
+          <div id="focusOptions" class="grid grid-cols-5 gap-1.5"></div>
+        </div>
+
+        <!-- Chronicle Feed -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-sm flex-1 flex flex-col min-h-[210px] max-h-[300px]">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+            <span class="text-xs font-bold text-slate-400">📜 인생 연대기 로그</span>
+            <span id="logCounter" class="text-[11px] text-slate-500">0년차</span>
+          </div>
+          <div id="lifeLogContainer" class="log-scroll overflow-y-auto flex-1 space-y-2 pr-1 text-xs sm:text-sm"></div>
         </div>
       </div>
 
-      <!-- Focus Activity Selector (Active when no pending choice) -->
-      <div id="focusPanel" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm">
-        <div class="flex items-center justify-between mb-2.5">
-          <span class="text-xs font-bold text-slate-700 dark:text-slate-300">🎯 올해의 집중 활동</span>
-          <span id="focusHint" class="text-[11px] text-slate-400">매년 능력치 성장에 반영</span>
-        </div>
-        <div id="focusOptions" class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-          <!-- Focus buttons rendered by JS -->
-        </div>
-      </div>
+      <!-- GAMEPLAY VIEW 2: IN-LIFE DOPAMINE MINI-GACHA PANEL -->
+      <div id="viewGameGamble" class="hidden flex-1 flex flex-col gap-3 animate-entry">
 
-      <!-- Life Chronicle Log Feed -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-sm flex-1 flex flex-col min-h-[230px] max-h-[340px]">
-        <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100 dark:border-slate-800">
-          <span class="text-xs font-bold text-slate-500 dark:text-slate-400">📜 인생 연대기 기록</span>
-          <span id="logCounter" class="text-[11px] text-slate-400">0년차</span>
+        <!-- 1. Instant Lotto 6/45 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-md">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="text-sm font-black text-amber-300 flex items-center gap-1.5">🎱 동행복권 로또 6/45 즉석 추첨</h3>
+              <p class="text-[11px] text-slate-400">티켓 1장 <strong class="text-white">50만 원</strong> · 1등 당첨 시 <strong class="text-amber-400">+20억 원</strong> 대박!</p>
+            </div>
+            <button id="btnPlayLotto" type="button"
+              class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs shadow transition cursor-pointer">
+              50만 원 긁기
+            </button>
+          </div>
+          <div id="lottoBallsBox" class="flex items-center justify-center gap-2 py-2.5 px-3 bg-slate-950 rounded-2xl border border-slate-800 min-h-[52px]">
+            <span class="text-xs text-slate-500">버튼을 눌러 행운의 6개 번호를 추첨하세요!</span>
+          </div>
+          <div id="lottoResultText" class="text-center text-xs font-bold text-slate-300 mt-2"></div>
         </div>
-        <div id="lifeLogContainer" class="log-scroll overflow-y-auto flex-1 space-y-2.5 pr-1 text-xs sm:text-sm">
-          <!-- Log items injected via JS -->
+
+        <!-- 2. Altcoin Leverage Roulette -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-md">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="text-sm font-black text-cyan-300 flex items-center gap-1.5">📈 야수의 심장: 알트코인 선물 룰렛</h3>
+              <p class="text-[11px] text-slate-400">현재 순자산의 <strong class="text-white">20%</strong> (최소 200만 원) 배팅 · <span class="text-rose-400">0배 청산</span> ~ <span class="text-emerald-400">10배 떡상</span></p>
+            </div>
+            <button id="btnPlayCoinRoulette" type="button"
+              class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 active:scale-95 text-white font-black text-xs shadow transition cursor-pointer">
+              풀레버리지 진입
+            </button>
+          </div>
+          <div id="coinRouletteDisplay" class="py-3 px-4 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+            <span class="text-xs text-slate-500">배율: [ 0x 청산 | 0.5x 손절 | 1.5x 익절 | 3x 급등 | 10x 화성행 ]</span>
+          </div>
+        </div>
+
+        <!-- 3. Mystery Opportunity 3-Card Flip -->
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-md">
+          <div class="flex items-center justify-between mb-2.5">
+            <div>
+              <h3 class="text-sm font-black text-fuchsia-300 flex items-center gap-1.5">🃏 미스터리 인맥/기회 카드 뒤집기</h3>
+              <p class="text-[11px] text-slate-400">매년 1회 무료! 3장의 뒷면 카드 중 운명의 1장을 고르세요.</p>
+            </div>
+            <span id="mysteryCardQuotaBadge" class="px-2.5 py-1 rounded-lg text-[10px] font-black bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40">
+              올해 1회 가능
+            </span>
+          </div>
+          <div id="mysteryCardsGrid" class="grid grid-cols-3 gap-2.5">
+            <!-- 3 Cards rendered by JS -->
+          </div>
         </div>
       </div>
 
       <!-- Fixed Bottom Action Bar (+1 Year) -->
-      <div class="fixed bottom-0 left-0 right-0 bg-white/85 dark:bg-slate-950/85 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-3 z-30">
-        <div class="max-w-[640px] mx-auto flex items-center gap-2.5">
+      <div class="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 p-3 z-30">
+        <div class="max-w-[660px] mx-auto flex items-center gap-2">
           <button id="btnNextYear" type="button"
-            class="flex-1 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none text-white font-extrabold text-sm sm:text-base shadow-lg shadow-indigo-600/20 transition cursor-pointer flex items-center justify-center gap-2">
+            class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none text-white font-black text-sm sm:text-base shadow-lg shadow-indigo-600/25 transition cursor-pointer flex items-center justify-center gap-2">
             <span>⏭️ +1년 살아가기</span>
-            <span id="nextAgePreview" class="text-xs font-normal opacity-80">(1세로)</span>
+            <span id="nextAgePreview" class="text-xs font-semibold opacity-80">(1세로)</span>
           </button>
         </div>
       </div>
@@ -310,89 +519,106 @@
     </section>
 
     <!-- ========================================================= -->
-    <!-- SCREEN 3: ENDING / LIFE SUMMARY REPORT CARD -->
+    <!-- SCREEN 3: ENDING REPORT CARD & DIAMOND REWARD -->
     <!-- ========================================================= -->
     <section id="screenEnding" class="hidden flex-1 flex flex-col gap-4 animate-entry">
-      <div id="summaryCardCapture" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-md relative overflow-hidden">
-        <!-- Decorative Top Gradient Bar -->
-        <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-fuchsia-500 to-cyan-400"></div>
 
         <div class="flex items-center justify-between mb-3 pt-1">
-          <span class="text-xs font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400">대한민국 인생 성적표</span>
-          <span id="endCauseBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">노환으로 영면</span>
+          <span class="text-xs font-black tracking-wider uppercase text-indigo-400">대한민국 인생 성적표</span>
+          <span id="endCauseBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300">영면</span>
         </div>
 
-        <!-- Final Title -->
         <div class="mb-4">
-          <div class="text-xs text-slate-500 dark:text-slate-400 mb-1" id="endSubTitle">서울 강남3구 · 🥇 금수저 출신</div>
-          <h2 id="endTitle" class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <div class="text-xs text-slate-400 mb-1" id="endSubTitle">서울 강남3구 · 🥇 금수저 출신</div>
+          <h2 id="endTitle" class="text-2xl sm:text-3xl font-black text-white tracking-tight">
             “자수성가한 판교의 워커홀릭”
           </h2>
-          <p id="endEpitaph" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
-            치열한 경쟁 속에서도 묵묵히 자신만의 길을 개척하며 한 시대를 풍미한 삶을 살았습니다.
+          <p id="endEpitaph" class="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+            치열한 경쟁 속에서도 묵묵히 자신만의 길을 개척했습니다.
           </p>
         </div>
 
-        <!-- Key Lifetime Metrics Grid -->
-        <div class="grid grid-cols-2 gap-2.5 mb-5">
-          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/70 dark:border-slate-800">
-            <div class="text-[11px] text-slate-400">향년 (최종 나이)</div>
-            <div id="endFinalAge" class="text-lg font-extrabold mt-0.5">84세</div>
+        <!-- Earned Reincarnation Diamonds Banner -->
+        <div class="mb-4 p-4 rounded-2xl bg-gradient-to-r from-cyan-950/90 to-indigo-950/90 border border-cyan-500/40 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] font-bold text-cyan-300">✨ 이번 생 업적 정산 보상</div>
+            <div class="text-xs text-slate-400 mt-0.5">생존 연수 + 최종 자산 + 역전 보너스</div>
           </div>
-          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/70 dark:border-slate-800">
-            <div class="text-[11px] text-slate-400">최종 순자산</div>
-            <div id="endNetWorth" class="text-lg font-extrabold text-indigo-600 dark:text-indigo-400 mt-0.5">14억 2,000만 원</div>
-          </div>
-          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/70 dark:border-slate-800">
-            <div class="text-[11px] text-slate-400">최고 연봉</div>
-            <div id="endPeakSalary" class="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">1억 1,000만 원</div>
-          </div>
-          <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/70 dark:border-slate-800">
-            <div class="text-[11px] text-slate-400">최종 커리어 / 가족</div>
-            <div id="endCareerFamily" class="text-xs font-bold mt-1 leading-snug">대기업 부장 · 기혼 (자녀 1명)</div>
+          <div class="text-right">
+            <span class="text-xl sm:text-2xl font-black text-cyan-300">+<span id="endEarnedDiamonds">250</span> 💎</span>
           </div>
         </div>
 
-        <!-- Major Life Milestones -->
-        <div class="mb-2">
-          <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">📌 주요 인생 발자취</h3>
-          <ul id="endMilestones" class="space-y-1.5 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/60 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80">
-            <!-- Milestones injected via JS -->
-          </ul>
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-2 gap-2.5 mb-4">
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+            <div class="text-[11px] text-slate-500">향년 (최종 나이)</div>
+            <div id="endFinalAge" class="text-lg font-black text-white mt-0.5">84세</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+            <div class="text-[11px] text-slate-500">최종 순자산</div>
+            <div id="endNetWorth" class="text-lg font-black text-indigo-400 mt-0.5">14억 2,000만 원</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+            <div class="text-[11px] text-slate-500">최고 연봉</div>
+            <div id="endPeakSalary" class="text-sm font-extrabold text-emerald-400 mt-0.5">1억 1,000만 원</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800">
+            <div class="text-[11px] text-slate-500">최종 커리어 / 가족</div>
+            <div id="endCareerFamily" class="text-xs font-bold text-slate-200 mt-1 leading-snug">대기업 부장 · 기혼</div>
+          </div>
+        </div>
+
+        <!-- Milestones -->
+        <div>
+          <h3 class="text-xs font-bold text-slate-400 mb-2">📌 주요 인생 하이라이트</h3>
+          <ul id="endMilestones" class="space-y-1.5 text-xs text-slate-300 bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800"></ul>
         </div>
       </div>
 
-      <!-- Share & Replay Actions -->
+      <!-- Ending Action Buttons -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <button id="btnCopyShare" type="button"
-          class="py-3.5 px-4 rounded-2xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-sm hover:opacity-90 transition cursor-pointer flex items-center justify-center gap-2 shadow-sm">
-          <span>📋 결과 카드 텍스트 복사</span>
+          class="py-3.5 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-extrabold text-sm transition cursor-pointer flex items-center justify-center gap-2">
+          <span>📋 인생 성적표 복사하기</span>
         </button>
-        <button id="btnReincarnate" type="button"
-          class="py-3.5 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-sm hover:from-indigo-500 hover:to-violet-500 transition cursor-pointer flex items-center justify-center gap-2 shadow-md">
-          <span>🔄 다음 생 환생하기</span>
+        <button id="btnBackToLobby" type="button"
+          class="py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-pink-500 to-indigo-600 text-white font-black text-sm shadow-lg transition cursor-pointer flex items-center justify-center gap-2">
+          <span>💎 로비로 돌아가 가챠 뽑기</span>
         </button>
       </div>
     </section>
 
     <!-- ========================================================= -->
-    <!-- MODAL: ENDING COLLECTION (인생 도감) -->
+    <!-- MODAL: ENCYCLOPEDIA (24 RELICS + 20 TITLES) -->
     <!-- ========================================================= -->
-    <div id="modalCollection" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-[520px] w-full max-h-[80vh] flex flex-col p-5 shadow-2xl animate-entry">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+    <div id="modalEncyclopedia" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-[560px] w-full max-h-[84vh] flex flex-col p-5 shadow-2xl animate-entry">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
-            <h3 class="text-base font-extrabold">🏆 수집한 인생 칭호 도감</h3>
-            <p class="text-[11px] text-slate-400">다양한 N수저와 선택으로 숨겨진 인생 엔딩을 모아보세요.</p>
+            <h3 class="text-base font-black text-white">📖 영구 수집 도감</h3>
+            <p class="text-[11px] text-slate-400">전생 유물 24종과 인생 칭호 20종을 모두 수집해 보세요.</p>
           </div>
-          <button id="btnCloseCollection" type="button" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">✕</button>
+          <button id="btnCloseEncyclopedia" type="button" class="p-2 rounded-xl hover:bg-slate-800 text-slate-400 cursor-pointer">✕</button>
         </div>
-        <div id="collectionList" class="overflow-y-auto flex-1 py-3 space-y-2 text-xs">
-          <!-- Saved endings rendered here -->
+
+        <!-- Dex Sub-tabs -->
+        <div class="grid grid-cols-2 gap-2 my-3 p-1 bg-slate-950 rounded-xl border border-slate-800">
+          <button id="dexTabRelics" type="button" class="py-1.5 rounded-lg text-xs font-extrabold bg-indigo-600 text-white cursor-pointer">
+            🔮 환생 특성 도감 (<span id="dexRelicCount">0</span>/24)
+          </button>
+          <button id="dexTabTitles" type="button" class="py-1.5 rounded-lg text-xs font-extrabold text-slate-400 cursor-pointer">
+            🏆 엔딩 칭호 도감 (<span id="dexTitleCount">0</span>/20)
+          </button>
         </div>
-        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[11px] text-slate-400">
-          <span id="collectionSummaryText">총 0개의 인생 기록됨</span>
-          <button id="btnClearCollection" type="button" class="text-rose-500 hover:underline">기록 초기화</button>
+
+        <div id="dexContentList" class="overflow-y-auto flex-1 space-y-2 pr-1 text-xs log-scroll"></div>
+
+        <div class="pt-3 mt-2 border-t border-slate-800 flex justify-between items-center text-[11px] text-slate-500">
+          <span>데이터는 브라우저에 자동 저장됩니다.</span>
+          <button id="btnResetAllData" type="button" class="text-rose-400 hover:underline cursor-pointer">전체 데이터 초기화</button>
         </div>
       </div>
     </div>
@@ -400,30 +626,155 @@
   </div>
 
   <!-- ========================================================= -->
-  <!-- GAME ENGINE & STATISTICAL DATA LOGIC (SINGLE FILE JS) -->
+  <!-- COMPLETE GAME ENGINE, WEB AUDIO SYNTH & GACHA DATA -->
   <!-- ========================================================= -->
   <script>
     /**
-     * 대한민국 N수저 생존기 (Korea Life & Career Simulator)
-     * 통계 기반 확률 테이블, 생애주기 이벤트 엔진, 커리어/자산 시뮬레이션 로직
+     * 1. WEB AUDIO API SOUND ENGINE (외부 오디오 파일 없이 효과음 합성)
      */
+    const SoundFX = (() => {
+      let ctx = null;
+      let enabled = true;
 
-    // 1. 유틸리티 함수: 금액 한국식 포맷팅 (예: 12500 -> 1억 2,500만 원)
+      function ensureCtx() {
+        if (!ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) ctx = new AudioCtx();
+        }
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+      }
+
+      function playTone(freq, type = 'sine', duration = 0.12, gainVal = 0.12, delay = 0) {
+        if (!enabled) return;
+        try {
+          ensureCtx();
+          if (!ctx) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+          gain.gain.setValueAtTime(gainVal, ctx.currentTime + delay);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + delay);
+          osc.stop(ctx.currentTime + delay + duration);
+        } catch (e) {}
+      }
+
+      return {
+        toggle() {
+          enabled = !enabled;
+          return enabled;
+        },
+        isEnabled() { return enabled; },
+        tick() { playTone(720, 'triangle', 0.045, 0.08); },
+        click() { playTone(520, 'sine', 0.07, 0.1); },
+        coin() {
+          playTone(987.77, 'sine', 0.09, 0.12, 0);
+          playTone(1318.51, 'sine', 0.18, 0.14, 0.07);
+        },
+        fail() {
+          playTone(240, 'sawtooth', 0.16, 0.12, 0);
+          playTone(175, 'sawtooth', 0.25, 0.14, 0.12);
+        },
+        fanfare(rarity) {
+          if (rarity === 'UR' || rarity === 'SSR') {
+            const notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
+            notes.forEach((n, i) => playTone(n, 'triangle', 0.24, 0.16, i * 0.07));
+          } else if (rarity === 'SR') {
+            [440, 554.37, 659.25, 880].forEach((n, i) => playTone(n, 'sine', 0.18, 0.13, i * 0.06));
+          } else {
+            playTone(587.33, 'sine', 0.14, 0.1);
+          }
+        }
+      };
+    })();
+
+    /**
+     * 2. CONFETTI PARTICLE ENGINE (SSR / UR / 대박 연출)
+     */
+    const Confetti = (() => {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animId = null;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      function burst(count = 90) {
+        const colors = ['#fbbf24', '#ec4899', '#38bdf8', '#a855f7', '#34d399', '#f43f5e'];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: canvas.width * 0.5 + (Math.random() - 0.5) * 180,
+            y: canvas.height * 0.45,
+            vx: (Math.random() - 0.5) * 14,
+            vy: (Math.random() - 0.85) * 15,
+            size: Math.random() * 7 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            rot: Math.random() * 360,
+            vRot: (Math.random() - 0.5) * 12,
+            life: 95 + Math.random() * 35
+          });
+        }
+        if (!animId) loop();
+      }
+
+      function loop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.35; // gravity
+          p.rot += p.vRot;
+          p.life -= 1;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          ctx.restore();
+        });
+        particles = particles.filter(p => p.life > 0);
+        if (particles.length > 0) {
+          animId = requestAnimationFrame(loop);
+        } else {
+          animId = null;
+        }
+      }
+
+      return { burst };
+    })();
+
+    function triggerScreenShake() {
+      const body = document.getElementById('appBody');
+      body.classList.remove('animate-shake');
+      void body.offsetWidth;
+      body.classList.add('animate-shake');
+    }
+
+    /**
+     * 3. 유틸리티 함수
+     */
     function formatKRW(manWon) {
-      if (manWon === 0) return '0원';
+      if (!manWon || Math.round(manWon) === 0) return '0원';
       const isNeg = manWon < 0;
       const absVal = Math.abs(Math.round(manWon));
       const eok = Math.floor(absVal / 10000);
       const man = absVal % 10000;
-      let result = '';
-      if (eok > 0) result += `${eok.toLocaleString()}억 `;
-      if (man > 0) result += `${man.toLocaleString()}만 `;
-      result += '원';
-      return (isNeg ? '-' : '') + result.trim();
+      let res = '';
+      if (eok > 0) res += `${eok.toLocaleString()}억 `;
+      if (man > 0) res += `${man.toLocaleString()}만 `;
+      return (isNeg ? '-' : '') + res.trim() + '원';
     }
 
-    function clamp(val, min = 0, max = 100) {
-      return Math.max(min, Math.min(max, Math.round(val)));
+    function clamp(v, min = 0, max = 100) {
+      return Math.max(min, Math.min(max, Math.round(v)));
     }
 
     function randInt(min, max) {
@@ -431,7 +782,7 @@
     }
 
     function weightedPick(items) {
-      const total = items.reduce((acc, item) => acc + item.weight, 0);
+      const total = items.reduce((s, x) => s + x.weight, 0);
       let r = Math.random() * total;
       for (const item of items) {
         if (r < item.weight) return item;
@@ -440,66 +791,189 @@
       return items[items.length - 1];
     }
 
-    // 2. 대한민국 출생 통계 데이터 테이블
-    const SPOON_TIERS = [
+    /**
+     * 4. META GACHA DATABASE: 24종 환생 유물 (N, R, SR, SSR, UR)
+     */
+    const RELIC_POOL = [
+      // UR (2종 - 1.5%)
       {
-        id: 'diamond',
-        label: '💎 다이아수저',
-        weight: 1,
-        badgeClass: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400',
-        initAssets: () => randInt(150000, 500000), // 15억 ~ 50억
-        allowance: 500, // 연 500만원 용돈
-        eduBonus: 20,
-        desc: '상위 1% 자산가 가문에서 태어났습니다. 태어날 때부터 강남 아파트 한 채 몫의 증여 재산이 준비되어 있습니다.'
+        id: 'ur_satoshi', rarity: 'UR', icon: '💾', name: '사토시 나카모토의 USB',
+        desc: '출생 시 2010년 비트코인 지갑(초기 자산 +15억) 보유 & 매년 투자 수익률 +12% 추가 보너스',
+        effect: { initMoney: 150000, investBonus: 0.12, smart: 10 }
       },
       {
-        id: 'gold',
-        label: '🥇 금수저',
-        weight: 4,
-        badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-        initAssets: () => randInt(30000, 100000), // 3억 ~ 10억
-        allowance: 240,
-        eduBonus: 12,
-        desc: '전문직·고소득 부모님 아래 부족함 없는 유년기를 시작합니다. 사교육과 유학 지원이 탄탄합니다.'
+        id: 'ur_chaebol', rarity: 'UR', icon: '👑', name: '순양그룹 숨겨진 막내손자',
+        desc: '수저 계급 최소 은수저 이상 강제 보정 & 초기 자산 +25억, 인맥 +25',
+        effect: { minSilver: true, initMoney: 250000, charm: 25 }
+      },
+      // SSR (4종 - 6.5%)
+      {
+        id: 'ssr_apgujeong', rarity: 'UR' === 'SSR' ? 'SSR' : 'SSR', icon: '🏢', name: '강남 압구정 아파트 청약권',
+        desc: '초기 부동산 자산 +8억 원 지급 & 매년 부동산/자산 자연 상승률 +6%',
+        effect: { initMoney: 80000, investBonus: 0.06 }
       },
       {
-        id: 'silver',
-        label: '🥈 은수저',
-        weight: 15,
-        badgeClass: 'bg-slate-400/20 text-slate-700 dark:text-slate-300',
-        initAssets: () => randInt(5000, 20000), // 5천만 ~ 2억
-        allowance: 100,
-        eduBonus: 5,
-        desc: '안정적인 중산층 가정에서 태어났습니다. 큰 빚 없이 학업과 취업에 집중할 수 있는 환경입니다.'
+        id: 'ssr_genius', rarity: 'SSR', icon: '🧬', name: '카이스트 영재원 수석의 두뇌',
+        desc: '초기 역량 +25, 매년 자기계발 효율 2배 & 연봉 상승률 +3% 추가',
+        effect: { smart: 25, salaryGrowth: 0.03 }
       },
       {
-        id: 'bronze',
-        label: '🥉 동수저',
-        weight: 40,
-        badgeClass: 'bg-orange-700/15 text-orange-700 dark:text-orange-400',
-        initAssets: () => randInt(500, 3000), // 500만 ~ 3천만
-        allowance: 30,
-        eduBonus: 0,
-        desc: '평범한 서민 가정에서 태어났습니다. 성인이 되면 스스로 학자금과 생활비를 벌어야 합니다.'
+        id: 'ssr_idol_face', rarity: 'SSR', icon: '🌟', name: '천년돌 비주얼 유전자',
+        desc: '초기 매력/인맥 +30, 20세 이후 매년 팬덤/협찬 부수입 +2,500만 원',
+        effect: { charm: 30, yearlyBonus: 2500 }
       },
       {
-        id: 'dirt',
-        label: '🥔 흙수저',
-        weight: 40,
-        badgeClass: 'bg-stone-500/15 text-stone-700 dark:text-stone-400',
-        initAssets: () => randInt(-2000, 300), // -2천만(가정 부채) ~ 300만
-        allowance: 0,
-        eduBonus: -5,
-        desc: '녹록지 않은 가정 형편 속에서 태어났습니다. 일찍부터 아르바이트와 자립심을 길러야 살아남을 수 있습니다.'
+        id: 'ssr_golden_hand', rarity: 'SSR', icon: '🎰', name: '타짜의 절대 손목',
+        desc: '인생 역전 가챠(로또/코인/카드) 당첨 확률 대폭 상승 & 초기 시드머니 +3억',
+        effect: { luckBonus: 0.15, initMoney: 30000 }
+      },
+      // SR (6종 - 22%)
+      {
+        id: 'sr_suneung', rarity: 'SR', icon: '📝', name: '수능 만점자의 노트',
+        desc: '초기 역량 +16, 고교/수능 이벤트 대성공 보정',
+        effect: { smart: 16 }
+      },
+      {
+        id: 'sr_steel_mental', rarity: 'SR', icon: '🛡️', name: '강철 멘탈의 소유자',
+        desc: '초기 멘탈 +20, 매년 멘탈 감소량 방어 및 워라밸 회복량 +3',
+        effect: { happy: 20, happyRegen: 3 }
+      },
+      {
+        id: 'sr_gangnam_mom', rarity: 'SR', icon: '👜', name: '대치동 1타 학부모 네트워크',
+        desc: '유년기 매년 용돈 +400만 원 & 역량 +12, 인맥 +10',
+        effect: { smart: 12, charm: 10, youthAllowance: 400 }
+      },
+      {
+        id: 'sr_quant', rarity: 'SR', icon: '📊', name: '여의도 퀀트 트레이더의 감각',
+        desc: '초기 자산 +1억 원 & 재테크 집중 시 수익률 +5%',
+        effect: { initMoney: 10000, investBonus: 0.05 }
+      },
+      {
+        id: 'sr_health_god', rarity: 'SR', icon: '🫀', name: '강철 심장과 100세 유전자',
+        desc: '초기 건강 +22, 45세 이후 노화 체력 감소 면역',
+        effect: { health: 22, antiAging: true }
+      },
+      {
+        id: 'sr_youtuber', rarity: 'SR', icon: '🎥', name: '구독자 100만 실버버튼',
+        desc: '성인 이후 매년 유튜브 광고 부수입 +1,800만 원 & 인맥 +12',
+        effect: { charm: 12, yearlyBonus: 1800 }
+      },
+      // R (6종 - 35%)
+      {
+        id: 'r_caffeine', rarity: 'R', icon: '☕', name: '카페인 완전 면역체질',
+        desc: '야근 및 시험 스트레스 저항, 역량 +8, 건강 +6',
+        effect: { smart: 8, health: 6 }
+      },
+      {
+        id: 'r_subscription', rarity: 'R', icon: '🏠', name: '만점짜리 주택청약통장',
+        desc: '초기 자산 +4,000만 원 & 결혼/내 집 마련 이벤트 보너스',
+        effect: { initMoney: 4000 }
+      },
+      {
+        id: 'r_speech', rarity: 'R', icon: '🎙️', name: '면접 프리패스 화술',
+        desc: '초기 매력/인맥 +14 & 취업 합격률 보정',
+        effect: { charm: 14 }
+      },
+      {
+        id: 'r_dividend', rarity: 'R', icon: '💵', name: '미국 배당주 적립 습관',
+        desc: '초기 자산 +3,000만 원 & 매년 배당금 +350만 원',
+        effect: { initMoney: 3000, yearlyBonus: 350 }
+      },
+      {
+        id: 'r_pt', rarity: 'R', icon: '🏋️', name: '3대 500 헬창의 근성',
+        desc: '초기 건강 +14, 멘탈 +6',
+        effect: { health: 14, happy: 6 }
+      },
+      {
+        id: 'r_coding', rarity: 'R', icon: '💻', name: '바이브 코딩 마스터',
+        desc: '초기 역량 +10 & N잡/부업 수익 +600만 원 증가',
+        effect: { smart: 10, sideBonus: 600 }
+      },
+      // N (6종 - 35%)
+      {
+        id: 'n_alba', rarity: 'N', icon: '🏪', name: '편의점 야간 알바 경력',
+        desc: '초기 자산 +800만 원, 역량 +3',
+        effect: { initMoney: 800, smart: 3 }
+      },
+      {
+        id: 'n_bicycle', rarity: 'N', icon: '🚲', name: '따릉이 1년 정기권',
+        desc: '초기 건강 +7, 생활비 절약(매년 +150만 원)',
+        effect: { health: 7, yearlyBonus: 150 }
+      },
+      {
+        id: 'n_book', rarity: 'N', icon: '📖', name: '자기계발 베스트셀러 10권',
+        desc: '초기 역량 +6, 멘탈 +4',
+        effect: { smart: 6, happy: 4 }
+      },
+      {
+        id: 'n_friend', rarity: 'N', icon: '🍻', name: '동네 평생 단짝 친구',
+        desc: '초기 멘탈 +8, 인맥 +5',
+        effect: { happy: 8, charm: 5 }
+      },
+      {
+        id: 'n_piggy', rarity: 'N', icon: '🐷', name: '어린 시절 돼지저금통',
+        desc: '초기 자산 +1,200만 원',
+        effect: { initMoney: 1200 }
+      },
+      {
+        id: 'n_lucky_charm', rarity: 'N', icon: '🍀', name: '네잎클로버 코팅 책갈피',
+        desc: '모든 초기 능력치 +3, 행운 소폭 상승',
+        effect: { smart: 3, health: 3, happy: 3, charm: 3, luckBonus: 0.03 }
       }
     ];
 
+    /**
+     * 5. 20종 엔딩 칭호 도감 데이터베이스
+     */
+    const ENDING_TITLES_DEX = [
+      { id: 't_dirt_god', rarity: 'UR', title: '흙수저에서 일군 대한민국 슈퍼리치', cond: '동/흙수저 출신으로 최종 자산 30억 이상 달성' },
+      { id: 't_diamond_king', rarity: 'SSR', title: '강남 스카이라인을 소유한 대자산가', cond: '최종 순자산 50억 원 이상 달성' },
+      { id: 't_lotto_winner', rarity: 'SSR', title: '인생역전 로또 1등의 전설', cond: '로또 1등 당첨 이력 보유' },
+      { id: 't_coin_god', rarity: 'SSR', title: '화성 갈끄니까! 코인 10배 떡상 신화', cond: '알트코인 10배 잭팟 성공 이력 보유' },
+      { id: 't_ceo', rarity: 'SSR', title: '대한민국 유니콘 기업 창업주', cond: '창업 성공 후 CEO 취임 및 자산 20억 이상' },
+      { id: 't_sky_elite', rarity: 'SR', title: 'SKY 출신 대한민국 핵심 엘리트', cond: 'SKY/카이스트 졸업 후 연봉 1억 5천만 원 이상 달성' },
+      { id: 't_middle_success', rarity: 'SR', title: '서울 자가에 연금까지 갖춘 승리자', cond: '최종 순자산 10억 원 이상 및 내 집 마련' },
+      { id: 't_civil', rarity: 'SR', title: '국민을 위해 봉사한 청렴한 공직자', cond: '공무원/공기업 직군으로 정년 은퇴' },
+      { id: 't_happy_max', rarity: 'SR', title: '행복지수 100%! 소확행의 달인', cond: '최종 멘탈/행복 95 이상으로 노년 영면' },
+      { id: 't_centenarian', rarity: 'SR', title: '100세 시대를 완주한 무병장수 아이콘', cond: '향년 95세 이상 장수' },
+      { id: 't_single_rich', rarity: 'R', title: '화려한 골드 싱글 자산가', cond: '비혼 유지 상태로 순자산 10억 원 이상 달성' },
+      { id: 't_family_man', rarity: 'R', title: '화목한 가정을 일군 대한민국의 가장', cond: '기혼 및 자녀 양육과 함께 75세 이상 생존' },
+      { id: 't_workaholic', rarity: 'R', title: '판교의 불꺼지지 않는 등대', cond: '스타트업/대기업 트랙에서 고연봉 달성' },
+      { id: 't_citizen', rarity: 'N', title: '묵묵히 제 몫을 다한 대한민국 소시민', cond: '평범하고 성실한 일생을 완주' },
+      { id: 't_debt_survivor', rarity: 'N', title: '빚더미 속에서도 끝까지 버틴 생존자', cond: '마이너스 순자산 상태로 75세 이상 생존' },
+      { id: 't_coin_ruin', rarity: 'N', title: '한강 물 온도 체크하러 간 야수', cond: '알트코인 청산 이후 마이너스 자산으로 엔딩' },
+      { id: 't_burnout', rarity: 'N', title: '지쳐버린 현대인의 자화상', cond: '멘탈 0으로 은둔 엔딩' },
+      { id: 't_overwork', rarity: 'N', title: '너무 일찍 져버린 청춘의 별', cond: '45세 이전에 건강 악화로 요절' },
+      { id: 't_early_bird', rarity: 'R', title: '고졸 신화를 쓴 현장 베테랑', cond: '19세 조기 취업 후 순자산 8억 이상 달성' },
+      { id: 't_giveup', rarity: 'N', title: '미완의 악보로 남은 짧은 생애', cond: '스스로 인생 여정을 마감' }
+    ];
+
+    /**
+     * 6. 출생 확률 테이블 (수저 / 지역 / 선천적 재능)
+     */
+    const SPOON_TIERS = [
+      { id: 'diamond', label: '💎 다이아수저', icon: '💎', weight: 1, badgeClass: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40', initAssets: () => randInt(150000, 450000), allowance: 500, eduBonus: 20, desc: '상위 1% 자산가 가문에서 태어났습니다.' },
+      { id: 'gold', label: '🥇 금수저', icon: '🥇', weight: 4, badgeClass: 'bg-amber-500/20 text-amber-300 border border-amber-500/40', initAssets: () => randInt(30000, 95000), allowance: 240, eduBonus: 12, desc: '유복한 전문직·고소득 가정에서 태어났습니다.' },
+      { id: 'silver', label: '🥈 은수저', icon: '🥈', weight: 15, badgeClass: 'bg-slate-400/20 text-slate-200 border border-slate-400/40', initAssets: () => randInt(6000, 20000), allowance: 100, eduBonus: 5, desc: '안정적인 중산층 가정에서 태어났습니다.' },
+      { id: 'bronze', label: '🥉 동수저', icon: '🥉', weight: 40, badgeClass: 'bg-orange-600/20 text-orange-300 border border-orange-500/40', initAssets: () => randInt(500, 3000), allowance: 30, eduBonus: 0, desc: '평범한 서민 가정에서 태어났습니다.' },
+      { id: 'dirt', label: '🥔 흙수저', icon: '🥔', weight: 40, badgeClass: 'bg-stone-600/30 text-stone-300 border border-stone-500/40', initAssets: () => randInt(-1800, 300), allowance: 0, eduBonus: -5, desc: '녹록지 않은 가정 형편 속에서 자립심을 키웁니다.' }
+    ];
+
     const REGIONS = [
-      { name: '서울 강남3구', weight: 6, eduMod: 10, costMod: 1.3 },
-      { name: '서울 비강남권', weight: 14, eduMod: 5, costMod: 1.15 },
-      { name: '수도권 신도시', weight: 30, eduMod: 3, costMod: 1.0 },
-      { name: '지방 광역시', weight: 25, eduMod: 0, costMod: 0.85 },
-      { name: '지방 소도시/농어촌', weight: 25, eduMod: -4, costMod: 0.75 }
+      { name: '서울 강남3구', icon: '🏙️', weight: 7, eduMod: 10, costMod: 1.25 },
+      { name: '서울 비강남권', icon: '🚇', weight: 15, eduMod: 5, costMod: 1.12 },
+      { name: '수도권 신도시', icon: '🏢', weight: 28, eduMod: 3, costMod: 1.0 },
+      { name: '지방 광역시', icon: '🌉', weight: 25, eduMod: 0, costMod: 0.85 },
+      { name: '지방 소도시/농어촌', icon: '🌾', weight: 25, eduMod: -3, costMod: 0.75 }
+    ];
+
+    const INNATE_TALENTS = [
+      { name: '상위 0.1% 천재', icon: '🧠', weight: 5, smart: 18, charm: 5, health: 0, happy: 0 },
+      { name: '타고난 인싸력', icon: '✨', weight: 15, smart: 2, charm: 16, health: 2, happy: 6 },
+      { name: '강철 체력', icon: '💪', weight: 20, smart: 0, charm: 3, health: 18, happy: 4 },
+      { name: '긍정 회로 만렙', icon: '☀️', weight: 20, smart: 2, charm: 4, health: 4, happy: 16 },
+      { name: '평범한 일반인', icon: '🙂', weight: 30, smart: 4, charm: 4, health: 4, happy: 4 },
+      { name: '유리몸 체질', icon: '🤒', weight: 10, smart: 5, charm: 0, health: -12, happy: -4 }
     ];
 
     const KOREAN_NAMES = [
@@ -508,393 +982,962 @@
     ];
 
     const FOCUS_ACTIVITIES = [
-      { id: 'study', icon: '📚', label: '자기계발', desc: '역량/스펙 집중 상승' },
-      { id: 'invest', icon: '📈', label: '재테크', desc: '자산 증식 효율 증가' },
-      { id: 'health', icon: '💪', label: '건강관리', desc: '체력 회복 및 수명 연장' },
-      { id: 'rest', icon: '☕', label: '워라밸', desc: '행복도/멘탈 회복' },
-      { id: 'side', icon: '💻', label: 'N잡/부업', desc: '추가 부수입 창출' }
+      { id: 'study', icon: '📚', label: '자기계발' },
+      { id: 'invest', icon: '📈', label: '재테크' },
+      { id: 'health', icon: '💪', label: '건강관리' },
+      { id: 'rest', icon: '☕', label: '워라밸' },
+      { id: 'side', icon: '💻', label: 'N잡/부업' }
     ];
 
-    // 3. 게임 상태 객체 (Game State)
-    let state = null;
+    /**
+     * 7. PERSISTENT META STATE (localStorage 저장)
+     */
+    const META_STORAGE_KEY = 'kr_n_spoon_gacha_meta_v2';
+
+    let meta = {
+      diamonds: 1000, // 신규 유저 웰컴 다이아 1,000개
+      pity: 0,        // 30회 천장 카운트
+      ownedRelics: {}, // { relicId: level (1~5) }
+      equippedRelics: [], // max 3 ids
+      unlockedTitles: []  // array of title strings
+    };
+
+    function loadMeta() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(META_STORAGE_KEY));
+        if (saved && typeof saved === 'object') {
+          meta = {
+            diamonds: typeof saved.diamonds === 'number' ? saved.diamonds : 1000,
+            pity: saved.pity || 0,
+            ownedRelics: saved.ownedRelics || {},
+            equippedRelics: Array.isArray(saved.equippedRelics) ? saved.equippedRelics.slice(0, 3) : [],
+            unlockedTitles: Array.isArray(saved.unlockedTitles) ? saved.unlockedTitles : []
+          };
+        }
+      } catch (e) {}
+    }
+
+    function saveMeta() {
+      localStorage.setItem(META_STORAGE_KEY, JSON.stringify(meta));
+      updateHeaderMetaUI();
+    }
+
+    function updateHeaderMetaUI() {
+      document.getElementById('headerDiamondCount').textContent = meta.diamonds.toLocaleString();
+      const ownedCount = Object.keys(meta.ownedRelics).length;
+      const titleCount = meta.unlockedTitles.length;
+      document.getElementById('headerDexRatio').textContent = `${ownedCount + titleCount}/44`;
+      document.getElementById('pityCounterText').textContent = meta.pity;
+    }
+
+    /**
+     * 8. TOAST & LOBBY RENDERING
+     */
+    let toastTimer = null;
+    function showToast(msg) {
+      const box = document.getElementById('toastBox');
+      document.getElementById('toastMsg').textContent = msg;
+      box.classList.remove('opacity-0', '-translate-y-2');
+      box.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.remove('opacity-100', 'translate-y-0');
+        box.classList.add('opacity-0', '-translate-y-2');
+      }, 2400);
+    }
+
+    window.switchLobbyTab = function(tab) {
+      SoundFX.click();
+      const isPlay = tab === 'play';
+      document.getElementById('viewLobbyPlay').classList.toggle('hidden', !isPlay);
+      document.getElementById('viewLobbyGacha').classList.toggle('hidden', isPlay);
+
+      const btnPlay = document.getElementById('tabLobbyPlay');
+      const btnGacha = document.getElementById('tabLobbyGacha');
+      if (isPlay) {
+        btnPlay.className = 'py-2.5 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow transition cursor-pointer';
+        btnGacha.className = 'py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-slate-400 hover:text-white transition cursor-pointer flex items-center justify-center gap-1.5';
+        renderLobbyLoadout();
+      } else {
+        btnGacha.className = 'py-2.5 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-amber-500 to-pink-600 text-white shadow transition cursor-pointer flex items-center justify-center gap-1.5';
+        btnPlay.className = 'py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-slate-400 hover:text-white transition cursor-pointer';
+      }
+    };
+
+    function getRarityBadgeHTML(rarity) {
+      const map = {
+        UR: 'bg-gradient-to-r from-pink-500 via-amber-400 to-cyan-400 text-slate-950 font-black',
+        SSR: 'bg-amber-400 text-slate-950 font-black',
+        SR: 'bg-purple-500 text-white font-extrabold',
+        R: 'bg-blue-500 text-white font-bold',
+        N: 'bg-slate-600 text-slate-100 font-bold'
+      };
+      return `<span class="px-1.5 py-0.5 rounded text-[9px] ${map[rarity] || map.N}">${rarity}</span>`;
+    }
+
+    function renderLobbyLoadout() {
+      // Equipped 3 slots
+      const slotsGrid = document.getElementById('equippedSlotsGrid');
+      document.getElementById('equippedCountText').textContent = meta.equippedRelics.length;
+
+      let slotsHTML = '';
+      for (let i = 0; i < 3; i++) {
+        const relicId = meta.equippedRelics[i];
+        const relic = RELIC_POOL.find(r => r.id === relicId);
+        if (relic) {
+          const lv = meta.ownedRelics[relicId] || 1;
+          slotsHTML += `
+            <div onclick="toggleEquipRelic('${relic.id}')"
+              class="p-2.5 rounded-2xl rarity-${relic.rarity} cursor-pointer hover:brightness-110 transition flex flex-col items-center text-center relative">
+              <span class="absolute top-1.5 right-1.5 text-[9px] font-black px-1 rounded bg-black/50 text-amber-300">Lv.${lv}</span>
+              <div class="text-xl mb-1">${relic.icon}</div>
+              <div class="text-[11px] font-extrabold text-white line-clamp-1">${relic.name}</div>
+              <div class="mt-1">${getRarityBadgeHTML(relic.rarity)}</div>
+            </div>
+          `;
+        } else {
+          slotsHTML += `
+            <div class="p-2.5 rounded-2xl bg-slate-950/70 border border-dashed border-slate-700 flex flex-col items-center justify-center text-center min-h-[86px]">
+              <span class="text-slate-600 text-lg mb-0.5">+</span>
+              <span class="text-[10px] text-slate-500 font-semibold">빈 유물 슬롯</span>
+            </div>
+          `;
+        }
+      }
+      slotsGrid.innerHTML = slotsHTML;
+
+      // Owned Relics List
+      const ownedIds = Object.keys(meta.ownedRelics);
+      document.getElementById('ownedRelicCounter').textContent = `${ownedIds.length} / 24종 보유`;
+      const listEl = document.getElementById('ownedRelicsList');
+
+      if (ownedIds.length === 0) {
+        listEl.innerHTML = `
+          <div class="col-span-2 py-6 text-center bg-slate-950/60 rounded-2xl border border-slate-800 text-xs text-slate-400">
+            아직 보유한 유물이 없습니다.<br/>
+            <button type="button" onclick="switchLobbyTab('gacha')" class="text-amber-400 font-bold underline mt-1 cursor-pointer">
+              웰컴 💎1,000 다이아로 첫 10연차 뽑기!
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // Sort by rarity
+      const rarityOrder = { UR: 0, SSR: 1, SR: 2, R: 3, N: 4 };
+      const sorted = ownedIds
+        .map(id => RELIC_POOL.find(r => r.id === id))
+        .filter(Boolean)
+        .sort((a, b) => rarityOrder[a.rarity] - rarityOrder[b.rarity]);
+
+      listEl.innerHTML = sorted.map(r => {
+        const isEq = meta.equippedRelics.includes(r.id);
+        const lv = meta.ownedRelics[r.id] || 1;
+        return `
+          <div onclick="toggleEquipRelic('${r.id}')"
+            class="p-2.5 rounded-2xl border transition cursor-pointer flex items-start gap-2.5 ${
+              isEq
+                ? 'bg-indigo-950/70 border-indigo-400 shadow-md'
+                : 'bg-slate-950/80 border-slate-800 hover:border-slate-600'
+            }">
+            <div class="text-xl shrink-0 mt-0.5">${r.icon}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                ${getRarityBadgeHTML(r.rarity)}
+                <span class="text-xs font-extrabold text-white truncate">${r.name}</span>
+                <span class="text-[10px] font-bold text-amber-300 shrink-0">Lv.${lv}</span>
+              </div>
+              <p class="text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">${r.desc}</p>
+            </div>
+            <span class="text-[10px] font-black px-1.5 py-0.5 rounded ${isEq ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400'}">
+              ${isEq ? '장착중' : '장착'}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.toggleEquipRelic = function(relicId) {
+      SoundFX.click();
+      const idx = meta.equippedRelics.indexOf(relicId);
+      if (idx >= 0) {
+        meta.equippedRelics.splice(idx, 1);
+        showToast('유물 장착을 해제했습니다.');
+      } else {
+        if (meta.equippedRelics.length >= 3) {
+          showToast('최대 3개까지만 장착할 수 있습니다! 기존 유물을 먼저 해제하세요.');
+          return;
+        }
+        meta.equippedRelics.push(relicId);
+        showToast('전생 유물을 장착했습니다!');
+      }
+      saveMeta();
+      renderLobbyLoadout();
+    };
+
+    /**
+     * 9. META GACHA SUMMON ENGINE (1회 & 10연차 + 30회 천장)
+     */
+    function rollSingleRelic(guaranteeSR = false) {
+      meta.pity += 1;
+      let rarity = 'N';
+
+      if (meta.pity >= 30) {
+        // 30회 천장 발동: SSR 이상 확정 (UR 20%, SSR 80%)
+        rarity = Math.random() < 0.2 ? 'UR' : 'SSR';
+        meta.pity = 0;
+      } else {
+        const r = Math.random() * 100;
+        if (r < 1.5) {
+          rarity = 'UR';
+          meta.pity = 0;
+        } else if (r < 8.0) {
+          rarity = 'SSR';
+          meta.pity = 0;
+        } else if (r < 30.0 || guaranteeSR) {
+          rarity = 'SR';
+        } else if (r < 65.0) {
+          rarity = 'R';
+        } else {
+          rarity = 'N';
+        }
+      }
+
+      const candidates = RELIC_POOL.filter(item => item.rarity === rarity);
+      const picked = candidates[randInt(0, candidates.length - 1)];
+
+      const prevLv = meta.ownedRelics[picked.id] || 0;
+      const isNew = prevLv === 0;
+      meta.ownedRelics[picked.id] = Math.min(5, prevLv + 1);
+
+      // 빈 슬롯이 있다면 자동 장착 편의성 제공
+      if (isNew && meta.equippedRelics.length < 3) {
+        meta.equippedRelics.push(picked.id);
+      }
+
+      return { relic: picked, isNew, newLv: meta.ownedRelics[picked.id] };
+    }
+
+    function executeSummon(count) {
+      const cost = count === 10 ? 900 : 100;
+      if (meta.diamonds < cost) {
+        SoundFX.fail();
+        showToast(`💎 다이아가 부족합니다! (필요: ${cost}개) 인생을 플레이해 다이아를 모으세요.`);
+        return;
+      }
+
+      meta.diamonds -= cost;
+      const results = [];
+      let hasSRPlus = false;
+
+      for (let i = 0; i < count; i++) {
+        const isLastAndNeedSR = (count === 10 && i === 9 && !hasSRPlus);
+        const res = rollSingleRelic(isLastAndNeedSR);
+        if (['SR', 'SSR', 'UR'].includes(res.relic.rarity)) hasSRPlus = true;
+        results.push(res);
+      }
+
+      saveMeta();
+
+      // Highest rarity check for FX
+      const hasUR = results.some(r => r.relic.rarity === 'UR');
+      const hasSSR = results.some(r => r.relic.rarity === 'SSR');
+      const hasSR = results.some(r => r.relic.rarity === 'SR');
+
+      if (hasUR) {
+        SoundFX.fanfare('UR');
+        triggerScreenShake();
+        Confetti.burst(150);
+        showToast('🌈 초월 등급 [UR] 전생 유물 강림!!');
+      } else if (hasSSR) {
+        SoundFX.fanfare('SSR');
+        triggerScreenShake();
+        Confetti.burst(95);
+        showToast('✨ 전설 등급 [SSR] 유물 획득!');
+      } else if (hasSR) {
+        SoundFX.fanfare('SR');
+      } else {
+        SoundFX.fanfare('N');
+      }
+
+      const stage = document.getElementById('gachaStageBox');
+      if (count === 1) {
+        const { relic, isNew, newLv } = results[0];
+        stage.innerHTML = `
+          <div class="w-full max-w-[260px] p-4 rounded-2xl rarity-${relic.rarity} animate-entry text-center">
+            <div class="${relic.rarity === 'UR' ? 'rarity-UR-inner rounded-xl p-3' : ''}">
+              <div class="flex items-center justify-between mb-2">
+                ${getRarityBadgeHTML(relic.rarity)}
+                <span class="text-[10px] font-black px-2 py-0.5 rounded-full ${isNew ? 'bg-emerald-500 text-slate-950' : 'bg-amber-400/20 text-amber-300'}">
+                  ${isNew ? 'NEW!' : `강화 Lv.${newLv}`}
+                </span>
+              </div>
+              <div class="text-4xl my-2">${relic.icon}</div>
+              <div class="text-sm font-black text-white">${relic.name}</div>
+              <p class="text-[11px] text-slate-300 mt-1.5 leading-relaxed">${relic.desc}</p>
+            </div>
+          </div>
+        `;
+      } else {
+        stage.innerHTML = `
+          <div class="w-full grid grid-cols-2 sm:grid-cols-5 gap-2 animate-entry">
+            ${results.map(({ relic, isNew, newLv }) => `
+              <div class="p-2 rounded-xl rarity-${relic.rarity} text-center flex flex-col items-center justify-between">
+                <div class="w-full flex items-center justify-between mb-1">
+                  ${getRarityBadgeHTML(relic.rarity)}
+                  <span class="text-[9px] font-black text-amber-300">${isNew ? 'NEW' : `Lv.${newLv}`}</span>
+                </div>
+                <div class="text-2xl my-0.5">${relic.icon}</div>
+                <div class="text-[10px] font-extrabold text-white line-clamp-1">${relic.name}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+
+    /**
+     * 10. BIRTH 3-REEL SLOT MACHINE ENGINE
+     */
+    let pendingBirthSpecs = null;
+
+    function openBirthSlotModal() {
+      SoundFX.click();
+      const modal = document.getElementById('modalBirthSlot');
+      const btnConfirm = document.getElementById('btnConfirmBirth');
+      const summaryBox = document.getElementById('slotResultSummary');
+
+      modal.classList.remove('hidden');
+      btnConfirm.disabled = true;
+      summaryBox.classList.add('hidden');
+
+      // Check equipped relic overrides (e.g., UR 순양그룹 막내손자 -> min Silver)
+      const equippedObjs = meta.equippedRelics.map(id => RELIC_POOL.find(r => r.id === id)).filter(Boolean);
+      const forceMinSilver = equippedObjs.some(r => r.effect.minSilver);
+
+      let finalSpoon = weightedPick(SPOON_TIERS);
+      if (forceMinSilver && (finalSpoon.id === 'dirt' || finalSpoon.id === 'bronze')) {
+        finalSpoon = SPOON_TIERS.find(s => s.id === 'silver');
+      }
+      const finalRegion = weightedPick(REGIONS);
+      const finalTalent = weightedPick(INNATE_TALENTS);
+      pendingBirthSpecs = { spoon: finalSpoon, region: finalRegion, talent: finalTalent };
+
+      const rSpoonIcon = document.getElementById('reelSpoonIcon');
+      const rSpoonText = document.getElementById('reelSpoonText');
+      const rRegionIcon = document.getElementById('reelRegionIcon');
+      const rRegionText = document.getElementById('reelRegionText');
+      const rTalentIcon = document.getElementById('reelTalentIcon');
+      const rTalentText = document.getElementById('reelTalentText');
+
+      rSpoonText.parentElement.classList.add('slot-spinning');
+      rRegionText.parentElement.classList.add('slot-spinning');
+      rTalentText.parentElement.classList.add('slot-spinning');
+
+      let step = 0;
+      const interval = setInterval(() => {
+        step++;
+        SoundFX.tick();
+
+        if (step <= 10) {
+          const s = SPOON_TIERS[step % SPOON_TIERS.length];
+          rSpoonIcon.textContent = s.icon;
+          rSpoonText.textContent = s.label.replace(/^[^\s]+\s/, '');
+        } else if (step === 11) {
+          rSpoonIcon.textContent = finalSpoon.icon;
+          rSpoonText.textContent = finalSpoon.label;
+          rSpoonText.parentElement.classList.remove('slot-spinning');
+        }
+
+        if (step <= 17) {
+          const rg = REGIONS[step % REGIONS.length];
+          rRegionIcon.textContent = rg.icon;
+          rRegionText.textContent = rg.name;
+        } else if (step === 18) {
+          rRegionIcon.textContent = finalRegion.icon;
+          rRegionText.textContent = finalRegion.name;
+          rRegionText.parentElement.classList.remove('slot-spinning');
+        }
+
+        if (step <= 24) {
+          const tl = INNATE_TALENTS[step % INNATE_TALENTS.length];
+          rTalentIcon.textContent = tl.icon;
+          rTalentText.textContent = tl.name;
+        } else {
+          clearInterval(interval);
+          rTalentIcon.textContent = finalTalent.icon;
+          rTalentText.textContent = finalTalent.name;
+          rTalentText.parentElement.classList.remove('slot-spinning');
+
+          if (finalSpoon.id === 'diamond' || finalSpoon.id === 'gold') {
+            SoundFX.fanfare('SSR');
+            Confetti.burst(80);
+            triggerScreenShake();
+          } else {
+            SoundFX.coin();
+          }
+
+          summaryBox.innerHTML = `
+            <strong class="text-white">${finalRegion.name}</strong>의 <strong class="text-amber-300">${finalSpoon.label}</strong> 가정에서
+            <strong class="text-pink-300">[${finalTalent.name}]</strong> 재능을 품고 태어납니다!
+          `;
+          summaryBox.classList.remove('hidden');
+          btnConfirm.disabled = false;
+        }
+      }, 65);
+    }
+
+    /**
+     * 11. ACTIVE GAMEPLAY ENGINE
+     */
+    let game = null;
     let pendingEvent = null;
 
-    function createInitialState(customName) {
-      const spoon = weightedPick(SPOON_TIERS);
-      const region = weightedPick(REGIONS);
-      const name = customName && customName.trim().length > 0
-        ? customName.trim()
-        : KOREAN_NAMES[randInt(0, KOREAN_NAMES.length - 1)];
-      const birthYear = randInt(1992, 2006);
+    function startNewLife() {
+      if (!pendingBirthSpecs) return;
+      SoundFX.click();
+      document.getElementById('modalBirthSlot').classList.add('hidden');
 
-      const smart = clamp(randInt(35, 70) + spoon.eduBonus + region.eduMod);
-      const health = clamp(randInt(65, 95));
-      const charm = clamp(randInt(35, 80));
-      const happy = clamp(randInt(60, 85) + (spoon.id === 'diamond' || spoon.id === 'gold' ? 8 : 0));
-      const netWorth = spoon.initAssets();
+      const { spoon, region, talent } = pendingBirthSpecs;
+      const customName = document.getElementById('inputPlayerName').value.trim();
+      const name = customName || KOREAN_NAMES[randInt(0, KOREAN_NAMES.length - 1)];
 
-      return {
+      // Aggregate equipped relic bonuses (scaled by relic level: 1 + (lv-1)*0.25)
+      const mods = {
+        initMoney: 0, smart: 0, health: 0, happy: 0, charm: 0,
+        investBonus: 0, salaryGrowth: 0, yearlyBonus: 0,
+        luckBonus: 0, happyRegen: 0, youthAllowance: 0, antiAging: false, sideBonus: 0
+      };
+
+      const activeRelicList = [];
+      meta.equippedRelics.forEach(id => {
+        const r = RELIC_POOL.find(x => x.id === id);
+        if (!r) return;
+        const lv = meta.ownedRelics[id] || 1;
+        const mult = 1 + (lv - 1) * 0.25;
+        activeRelicList.push({ ...r, lv });
+
+        const e = r.effect;
+        if (e.initMoney) mods.initMoney += Math.round(e.initMoney * mult);
+        if (e.smart) mods.smart += Math.round(e.smart * mult);
+        if (e.health) mods.health += Math.round(e.health * mult);
+        if (e.happy) mods.happy += Math.round(e.happy * mult);
+        if (e.charm) mods.charm += Math.round(e.charm * mult);
+        if (e.investBonus) mods.investBonus += e.investBonus * mult;
+        if (e.salaryGrowth) mods.salaryGrowth += e.salaryGrowth * mult;
+        if (e.yearlyBonus) mods.yearlyBonus += Math.round(e.yearlyBonus * mult);
+        if (e.luckBonus) mods.luckBonus += e.luckBonus * mult;
+        if (e.happyRegen) mods.happyRegen += Math.round(e.happyRegen * mult);
+        if (e.youthAllowance) mods.youthAllowance += Math.round(e.youthAllowance * mult);
+        if (e.antiAging) mods.antiAging = true;
+        if (e.sideBonus) mods.sideBonus += Math.round(e.sideBonus * mult);
+      });
+
+      const initAssets = spoon.initAssets() + mods.initMoney;
+      game = {
         name,
-        birthYear,
+        birthYear: randInt(1994, 2006),
         age: 0,
         spoon,
         region,
-        stats: { health, happy, smart, charm },
-        netWorth, // 단위: 만 원
-        salary: 0,  // 연봉 (만 원)
+        talent,
+        mods,
+        activeRelics: activeRelicList,
+        stats: {
+          health: clamp(randInt(65, 88) + talent.health + mods.health),
+          happy: clamp(randInt(60, 82) + talent.happy + mods.happy),
+          smart: clamp(randInt(35, 65) + spoon.eduBonus + region.eduMod + talent.smart + mods.smart),
+          charm: clamp(randInt(35, 72) + talent.charm + mods.charm)
+        },
+        netWorth: initAssets,
+        salary: 0,
         peakSalary: 0,
         status: '미취학 아동',
         education: '없음',
-        jobTier: 'none', // none, parttime, sme, mid, conglomerate, civil, startup, exec, business
+        jobTier: 'none',
         married: false,
         children: 0,
         hasHouse: spoon.id === 'diamond',
         focus: 'study',
         logs: [],
-        milestones: [`0세: ${region.name}에서 ${spoon.label}로 출생 (초기 자산 ${formatKRW(netWorth)})`],
+        milestones: [`0세: ${region.name}에서 ${spoon.label} [${talent.name}]로 출생 (초기 자산 ${formatKRW(initAssets)})`],
+        mysteryUsedThisYear: false,
+        wonLotto1st: false,
+        wonCoin10x: false,
+        ruinedByCoin: false,
         isDead: false,
         deathCause: ''
       };
+
+      pendingEvent = null;
+      addLog(0, `${region.name}에서 ${spoon.label}로 태어났습니다. (초기 순자산: ${formatKRW(initAssets)})`, true);
+
+      document.getElementById('screenLobby').classList.add('hidden');
+      document.getElementById('screenEnding').classList.add('hidden');
+      document.getElementById('screenGame').classList.remove('hidden');
+
+      switchGameSubTab('life');
+      resetMysteryCards();
+      renderGameUI();
     }
 
-    // 4. DOM 요소 참조
-    const els = {
-      screenStart: document.getElementById('screenStart'),
-      screenGame: document.getElementById('screenGame'),
-      screenEnding: document.getElementById('screenEnding'),
-      inputPlayerName: document.getElementById('inputPlayerName'),
-      btnStartGame: document.getElementById('btnStartGame'),
-      btnNextYear: document.getElementById('btnNextYear'),
-      nextAgePreview: document.getElementById('nextAgePreview'),
-      btnGiveUp: document.getElementById('btnGiveUp'),
-      badgeSpoon: document.getElementById('badgeSpoon'),
-      badgeRegion: document.getElementById('badgeRegion'),
-      badgeStage: document.getElementById('badgeStage'),
-      charName: document.getElementById('charName'),
-      charAge: document.getElementById('charAge'),
-      charYear: document.getElementById('charYear'),
-      charStatus: document.getElementById('charStatus'),
-      charSalary: document.getElementById('charSalary'),
-      charNetWorth: document.getElementById('charNetWorth'),
-      statHealthVal: document.getElementById('statHealthVal'),
-      statHealthBar: document.getElementById('statHealthBar'),
-      statHappyVal: document.getElementById('statHappyVal'),
-      statHappyBar: document.getElementById('statHappyBar'),
-      statSmartVal: document.getElementById('statSmartVal'),
-      statSmartBar: document.getElementById('statSmartBar'),
-      statCharmVal: document.getElementById('statCharmVal'),
-      statCharmBar: document.getElementById('statCharmBar'),
-      eventCard: document.getElementById('eventCard'),
-      eventTag: document.getElementById('eventTag'),
-      eventAgeBadge: document.getElementById('eventAgeBadge'),
-      eventTitle: document.getElementById('eventTitle'),
-      eventDesc: document.getElementById('eventDesc'),
-      eventChoices: document.getElementById('eventChoices'),
-      focusPanel: document.getElementById('focusPanel'),
-      focusOptions: document.getElementById('focusOptions'),
-      lifeLogContainer: document.getElementById('lifeLogContainer'),
-      logCounter: document.getElementById('logCounter'),
-      // Ending elements
-      endCauseBadge: document.getElementById('endCauseBadge'),
-      endSubTitle: document.getElementById('endSubTitle'),
-      endTitle: document.getElementById('endTitle'),
-      endEpitaph: document.getElementById('endEpitaph'),
-      endFinalAge: document.getElementById('endFinalAge'),
-      endNetWorth: document.getElementById('endNetWorth'),
-      endPeakSalary: document.getElementById('endPeakSalary'),
-      endCareerFamily: document.getElementById('endCareerFamily'),
-      endMilestones: document.getElementById('endMilestones'),
-      btnCopyShare: document.getElementById('btnCopyShare'),
-      btnReincarnate: document.getElementById('btnReincarnate'),
-      // Theme & Collection
-      btnToggleTheme: document.getElementById('btnToggleTheme'),
-      themeIcon: document.getElementById('themeIcon'),
-      btnOpenCollection: document.getElementById('btnOpenCollection'),
-      btnCloseCollection: document.getElementById('btnCloseCollection'),
-      btnClearCollection: document.getElementById('btnClearCollection'),
-      modalCollection: document.getElementById('modalCollection'),
-      collectionList: document.getElementById('collectionList'),
-      collectionBadge: document.getElementById('collectionBadge'),
-      collectionSummaryText: document.getElementById('collectionSummaryText'),
-      toastBox: document.getElementById('toastBox'),
-      toastMsg: document.getElementById('toastMsg')
-    };
-
-    // 5. 토스트 메시지 (alert 대체)
-    let toastTimer = null;
-    function showToast(msg) {
-      els.toastMsg.textContent = msg;
-      els.toastBox.classList.remove('opacity-0', '-translate-y-2');
-      els.toastBox.classList.add('opacity-100', 'translate-y-0');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => {
-        els.toastBox.classList.remove('opacity-100', 'translate-y-0');
-        els.toastBox.classList.add('opacity-0', '-translate-y-2');
-      }, 2400);
-    }
-
-    // 6. 생애주기 단계 판별
-    function getLifeStage(age) {
-      if (age <= 7) return '유아기';
-      if (age <= 13) return '초등학생';
-      if (age <= 19) return '청소년기';
-      if (age <= 29) return '청년/취업기';
-      if (age <= 44) return '사회인/도약기';
-      if (age <= 59) return '중년/자산형성기';
-      return '노년/은퇴기';
-    }
-
-    // 7. 로그 추가
     function addLog(age, text, highlight = false) {
-      state.logs.unshift({ age, text, highlight });
+      game.logs.unshift({ age, text, highlight });
     }
 
     function addMilestone(text) {
-      state.milestones.push(`${state.age}세: ${text}`);
+      game.milestones.push(`${game.age}세: ${text}`);
     }
 
-    // 8. UI 렌더링
-    function renderUI() {
-      if (!state) return;
+    window.switchGameSubTab = function(sub) {
+      SoundFX.click();
+      const isLife = sub === 'life';
+      document.getElementById('viewGameLife').classList.toggle('hidden', !isLife);
+      document.getElementById('viewGameGamble').classList.toggle('hidden', isLife);
 
-      els.badgeSpoon.textContent = state.spoon.label;
-      els.badgeSpoon.className = `px-2.5 py-0.5 rounded-full text-xs font-bold ${state.spoon.badgeClass}`;
-      els.badgeRegion.textContent = state.region.name;
-      els.badgeStage.textContent = getLifeStage(state.age);
+      const btnLife = document.getElementById('tabGameLife');
+      const btnGamble = document.getElementById('tabGameGamble');
+      if (isLife) {
+        btnLife.className = 'py-2 rounded-xl text-xs font-extrabold bg-indigo-600 text-white transition cursor-pointer';
+        btnGamble.className = 'py-2 rounded-xl text-xs font-extrabold text-amber-300 hover:bg-slate-800 transition cursor-pointer flex items-center justify-center gap-1.5';
+      } else {
+        btnGamble.className = 'py-2 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-500 to-pink-600 text-slate-950 transition cursor-pointer flex items-center justify-center gap-1.5';
+        btnLife.className = 'py-2 rounded-xl text-xs font-extrabold text-slate-400 hover:text-white transition cursor-pointer';
+      }
+    };
 
-      els.charName.textContent = state.name;
-      els.charAge.textContent = `${state.age}세`;
-      els.charYear.textContent = `(${state.birthYear + state.age}년)`;
-      els.charStatus.textContent = state.status;
-      els.charSalary.textContent = state.salary > 0 ? `${formatKRW(state.salary)}/년` : '소득 없음';
-      els.charNetWorth.textContent = formatKRW(state.netWorth);
-      els.charNetWorth.className = `font-bold block ${state.netWorth < 0 ? 'text-rose-500' : 'text-indigo-600 dark:text-indigo-400'}`;
+    function renderGameUI() {
+      if (!game) return;
+
+      const bSpoon = document.getElementById('badgeSpoon');
+      bSpoon.textContent = game.spoon.label;
+      bSpoon.className = `px-2.5 py-0.5 rounded-full text-[11px] font-black ${game.spoon.badgeClass}`;
+      document.getElementById('badgeRegion').textContent = game.region.name;
+      document.getElementById('badgeTalent').textContent = `${game.talent.icon} ${game.talent.name}`;
+
+      document.getElementById('charName').textContent = game.name;
+      document.getElementById('charAge').textContent = `${game.age}세`;
+      document.getElementById('charYear').textContent = `(${game.birthYear + game.age}년)`;
+      document.getElementById('charStatus').textContent = game.status;
+      document.getElementById('charSalary').textContent = game.salary > 0 ? `${formatKRW(game.salary)}/년` : '소득 없음';
+
+      const nwEl = document.getElementById('charNetWorth');
+      nwEl.textContent = formatKRW(game.netWorth);
+      nwEl.className = `font-black truncate block ${game.netWorth < 0 ? 'text-rose-400' : 'text-indigo-400'}`;
+
+      // Active relics bar
+      const relBar = document.getElementById('activeRelicsBar');
+      if (game.activeRelics.length > 0) {
+        relBar.innerHTML = game.activeRelics.map(r => `
+          <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-950 border border-slate-800 text-slate-300">
+            ${r.icon} ${r.name} <strong class="text-amber-300">Lv.${r.lv}</strong>
+          </span>
+        `).join('');
+      } else {
+        relBar.innerHTML = `<span class="text-[10px] text-slate-500">장착된 전생 유물 없음 (맨몸 환생)</span>`;
+      }
 
       // Stats
-      const { health, happy, smart, charm } = state.stats;
-      els.statHealthVal.textContent = health;
-      els.statHealthBar.style.width = `${health}%`;
-      els.statHappyVal.textContent = happy;
-      els.statHappyBar.style.width = `${happy}%`;
-      els.statSmartVal.textContent = smart;
-      els.statSmartBar.style.width = `${smart}%`;
-      els.statCharmVal.textContent = charm;
-      els.statCharmBar.style.width = `${charm}%`;
+      const { health, happy, smart, charm } = game.stats;
+      document.getElementById('statHealthVal').textContent = health;
+      document.getElementById('statHealthBar').style.width = `${health}%`;
+      document.getElementById('statHappyVal').textContent = happy;
+      document.getElementById('statHappyBar').style.width = `${happy}%`;
+      document.getElementById('statSmartVal').textContent = smart;
+      document.getElementById('statSmartBar').style.width = `${smart}%`;
+      document.getElementById('statCharmVal').textContent = charm;
+      document.getElementById('statCharmBar').style.width = `${charm}%`;
 
-      // Focus Activity Buttons
-      els.focusOptions.innerHTML = FOCUS_ACTIVITIES.map(act => {
-        const active = state.focus === act.id;
+      // Focus Buttons
+      document.getElementById('focusOptions').innerHTML = FOCUS_ACTIVITIES.map(act => {
+        const active = game.focus === act.id;
         return `
           <button type="button" onclick="selectFocus('${act.id}')"
-            class="p-2 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+            class="p-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center gap-0.5 ${
               active
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                : 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-indigo-400 text-slate-700 dark:text-slate-300'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow'
+                : 'bg-slate-950 border-slate-800 hover:border-slate-600 text-slate-300'
             }">
-            <span class="text-base">${act.icon}</span>
-            <span class="text-[11px] font-bold">${act.label}</span>
+            <span class="text-sm">${act.icon}</span>
+            <span class="text-[10px] font-extrabold">${act.label}</span>
           </button>
         `;
       }).join('');
 
-      // Pending Event Card vs Next Year Button
-      if (pendingEvent) {
-        els.eventCard.classList.remove('hidden');
-        els.focusPanel.classList.add('opacity-50', 'pointer-events-none');
-        els.btnNextYear.disabled = true;
-        els.eventTag.textContent = pendingEvent.tag || '인생 선택';
-        els.eventAgeBadge.textContent = `${state.age}세 이벤트`;
-        els.eventTitle.textContent = pendingEvent.title;
-        els.eventDesc.textContent = pendingEvent.desc;
+      // Event Card vs Next Year
+      const eventCard = document.getElementById('eventCard');
+      const focusPanel = document.getElementById('focusPanel');
+      const btnNext = document.getElementById('btnNextYear');
 
-        els.eventChoices.innerHTML = pendingEvent.choices.map((c, idx) => `
+      if (pendingEvent) {
+        switchGameSubTab('life');
+        eventCard.classList.remove('hidden');
+        focusPanel.classList.add('opacity-40', 'pointer-events-none');
+        btnNext.disabled = true;
+        document.getElementById('eventTag').textContent = pendingEvent.tag || '인생 선택';
+        document.getElementById('eventAgeBadge').textContent = `${game.age}세 이벤트`;
+        document.getElementById('eventTitle').textContent = pendingEvent.title;
+        document.getElementById('eventDesc').textContent = pendingEvent.desc;
+
+        document.getElementById('eventChoices').innerHTML = pendingEvent.choices.map((c, idx) => `
           <button type="button" onclick="resolveChoice(${idx})"
-            class="w-full text-left p-3.5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/40 transition cursor-pointer group">
-            <div class="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-              ${c.label}
-            </div>
+            class="w-full text-left p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-indigo-400 hover:bg-indigo-950/50 transition cursor-pointer">
+            <div class="font-extrabold text-xs sm:text-sm text-white">${c.label}</div>
             ${c.hint ? `<div class="text-[11px] text-slate-400 mt-0.5">${c.hint}</div>` : ''}
           </button>
         `).join('');
       } else {
-        els.eventCard.classList.add('hidden');
-        els.focusPanel.classList.remove('opacity-50', 'pointer-events-none');
-        els.btnNextYear.disabled = false;
-        els.nextAgePreview.textContent = `(${state.age + 1}세로)`;
+        eventCard.classList.add('hidden');
+        focusPanel.classList.remove('opacity-40', 'pointer-events-none');
+        btnNext.disabled = false;
+        document.getElementById('nextAgePreview').textContent = `(${game.age + 1}세로)`;
       }
 
-      // Render Chronicle Logs
-      els.logCounter.textContent = `${state.age}년차`;
-      els.lifeLogContainer.innerHTML = state.logs.map((item, i) => `
-        <div class="flex items-start gap-2.5 ${i === 0 ? 'animate-entry' : ''}">
-          <span class="shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-bold ${
-            item.highlight
-              ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
-              : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+      // Logs
+      document.getElementById('logCounter').textContent = `${game.age}년차`;
+      document.getElementById('lifeLogContainer').innerHTML = game.logs.map((item, i) => `
+        <div class="flex items-start gap-2 ${i === 0 ? 'animate-entry' : ''}">
+          <span class="shrink-0 px-2 py-0.5 rounded-lg text-[10px] font-black ${
+            item.highlight ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
           }">${item.age}세</span>
-          <p class="leading-relaxed ${
-            item.highlight
-              ? 'font-semibold text-slate-900 dark:text-white'
-              : 'text-slate-600 dark:text-slate-300'
-          }">${item.text}</p>
+          <p class="leading-relaxed ${item.highlight ? 'font-bold text-white' : 'text-slate-300'}">${item.text}</p>
         </div>
       `).join('');
     }
 
-    window.selectFocus = function(focusId) {
-      state.focus = focusId;
-      const found = FOCUS_ACTIVITIES.find(f => f.id === focusId);
-      if (found) showToast(`집중 활동: ${found.label} (${found.desc})`);
-      renderUI();
+    window.selectFocus = function(id) {
+      SoundFX.click();
+      game.focus = id;
+      renderGameUI();
     };
 
-    // 9. 핵심 이벤트 생성기 (연령대별 한국 현실 이벤트)
-    function checkAgeEvent(age) {
-      // 8세: 초등학교 입학
-      if (age === 8) {
-        state.status = `${state.region.name} 초등학생`;
-        addLog(age, '초등학교에 입학했습니다. 반 친구들과 첫 인사를 나누었습니다.', true);
+    /**
+     * 12. IN-LIFE DOPAMINE MINI-GACHA (로또 / 코인 룰렛 / 미스터리 카드)
+     */
+    // (1) 로또 6/45 즉석 추첨
+    document.getElementById('btnPlayLotto').addEventListener('click', () => {
+      if (!game || game.isDead) return;
+      if (game.netWorth < 50) {
+        SoundFX.fail();
+        showToast('티켓 구매 비용(50만 원)이 부족합니다!');
+        return;
       }
 
-      // 11세: 초등 사교육 / 예체능 선택
+      game.netWorth -= 50;
+      SoundFX.tick();
+
+      // Generate 6 unique numbers 1~45
+      const nums = [];
+      while (nums.length < 6) {
+        const n = randInt(1, 45);
+        if (!nums.includes(n)) nums.push(n);
+      }
+      nums.sort((a, b) => a - b);
+
+      // Weighted prize outcome (boosted by luckBonus)
+      const luck = game.mods.luckBonus || 0;
+      const roll = Math.random() - luck * 0.4;
+      let rank = '낙첨';
+      let prize = 0;
+
+      if (roll < 0.012) {
+        rank = '🎉 1등 당첨!!';
+        prize = 200000; // 20억
+        game.wonLotto1st = true;
+      } else if (roll < 0.045) {
+        rank = '🔥 2등 당첨!';
+        prize = 5000; // 5천만
+      } else if (roll < 0.14) {
+        rank = '✨ 3등 당첨!';
+        prize = 150; // 150만
+      } else if (roll < 0.34) {
+        rank = '🍀 4등 당첨';
+        prize = 5; // 5만
+      }
+
+      game.netWorth += prize;
+
+      const ballColors = ['bg-amber-400 text-slate-950', 'bg-cyan-400 text-slate-950', 'bg-rose-500 text-white', 'bg-slate-400 text-slate-950', 'bg-emerald-400 text-slate-950'];
+      document.getElementById('lottoBallsBox').innerHTML = nums.map(n => {
+        const c = ballColors[Math.floor((n - 1) / 10)];
+        return `<span class="w-8 h-8 rounded-full ${c} font-black text-xs flex items-center justify-center shadow animate-entry">${n}</span>`;
+      }).join('');
+
+      const resEl = document.getElementById('lottoResultText');
+      if (prize >= 5000) {
+        SoundFX.fanfare('UR');
+        Confetti.burst(130);
+        triggerScreenShake();
+        resEl.innerHTML = `<span class="text-amber-300 font-black">${rank} (+${formatKRW(prize)})</span>`;
+        addLog(game.age, `🎱 로또 6/45 ${rank}으로 ${formatKRW(prize)}을 거머쥐었습니다!`, true);
+        addMilestone(`로또 ${rank} (+${formatKRW(prize)})`);
+      } else if (prize > 0) {
+        SoundFX.coin();
+        resEl.innerHTML = `<span class="text-emerald-400">${rank} (+${formatKRW(prize)})</span>`;
+      } else {
+        resEl.innerHTML = `<span class="text-slate-500">아쉽게도 꽝입니다. (-50만 원)</span>`;
+      }
+
+      renderGameUI();
+    });
+
+    // (2) 알트코인 레버리지 룰렛
+    document.getElementById('btnPlayCoinRoulette').addEventListener('click', () => {
+      if (!game || game.isDead) return;
+      const bet = Math.max(200, Math.round(Math.max(0, game.netWorth) * 0.2));
+      if (game.netWorth < 200) {
+        SoundFX.fail();
+        showToast('최소 증거금 200만 원이 필요합니다!');
+        return;
+      }
+
+      const luck = game.mods.luckBonus || 0;
+      const outcomes = [
+        { mult: 0, label: '💀 0x 강제 청산 (전액 증발)', color: 'text-rose-400', weight: Math.max(12, 28 - luck * 40) },
+        { mult: 0.5, label: '📉 0.5x 반토막 손절', color: 'text-orange-400', weight: 28 },
+        { mult: 1.6, label: '📈 1.6x 달달한 익절', color: 'text-emerald-400', weight: 26 },
+        { mult: 3.5, label: '🚀 3.5x 불장 급등!', color: 'text-cyan-300', weight: 13 + luck * 20 },
+        { mult: 10.0, label: '🌈 10x 화성 갈끄니까 잭팟!!', color: 'text-amber-300', weight: 5 + luck * 20 }
+      ];
+
+      const picked = weightedPick(outcomes);
+      const returned = Math.round(bet * picked.mult);
+      const diff = returned - bet;
+      game.netWorth += diff;
+
+      const disp = document.getElementById('coinRouletteDisplay');
+      disp.innerHTML = `
+        <div class="animate-entry">
+          <div class="text-sm font-black ${picked.color}">${picked.label}</div>
+          <div class="text-xs text-slate-300 mt-0.5">배팅 ${formatKRW(bet)} → 손익 <strong class="${diff >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${diff >= 0 ? '+' : ''}${formatKRW(diff)}</strong></div>
+        </div>
+      `;
+
+      if (picked.mult >= 3.5) {
+        SoundFX.fanfare('SSR');
+        Confetti.burst(110);
+        triggerScreenShake();
+        addLog(game.age, `🚀 알트코인 레버리지 ${picked.label}으로 ${formatKRW(diff)} 수익 달성!`, true);
+        if (picked.mult === 10.0) {
+          game.wonCoin10x = true;
+          addMilestone(`알트코인 10배 잭팟 (+${formatKRW(diff)})`);
+        }
+      } else if (picked.mult > 1) {
+        SoundFX.coin();
+      } else {
+        SoundFX.fail();
+        if (picked.mult === 0) {
+          game.ruinedByCoin = true;
+          game.stats.happy = clamp(game.stats.happy - 8);
+          addLog(game.age, `💀 알트코인 고배율 선물 포지션이 강제 청산되어 ${formatKRW(bet)}을 잃었습니다.`);
+        }
+      }
+
+      renderGameUI();
+    });
+
+    // (3) 미스터리 인맥/기회 카드 뒤집기 (3장 중 1장)
+    const MYSTERY_CARDS_POOL = [
+      { icon: '🦄', title: '판교 스타트업 엔젤투자', desc: '초기 지분이 잭팟을 터뜨렸습니다! (+1억 2,000만 원)', apply: g => { g.netWorth += 12000; g.stats.smart = clamp(g.stats.smart + 4); } },
+      { icon: '💎', title: '청담동 VIP 인맥 파티 초대', desc: '정재계 인맥을 넓혔습니다! (인맥 +15, 멘탈 +8)', apply: g => { g.stats.charm = clamp(g.stats.charm + 15); g.stats.happy = clamp(g.stats.happy + 8); } },
+      { icon: '🐍', title: '기획부동산 사기꾼 동업자', desc: '지인 말만 믿고 투자했다가 큰돈을 뜯겼습니다. (-4,000만 원, 멘탈 -10)', apply: g => { g.netWorth -= 4000; g.stats.happy = clamp(g.stats.happy - 10); } },
+      { icon: '🏥', title: 'VIP 프리미엄 건강검진권', desc: '조기 관리로 컨디션이 최상으로 회복됩니다! (건강 +15)', apply: g => { g.stats.health = clamp(g.stats.health + 15); } },
+      { icon: '📜', title: '숨겨진 조상 땅 찾기 성공', desc: '지방 임야 보상금을 수령했습니다! (+6,500만 원)', apply: g => { g.netWorth += 6500; } },
+      { icon: '💼', title: '헤드헌터 특급 스카우트', desc: '연봉이 즉시 +1,500만 원 인상되었습니다! (무직 시 역량 +10)', apply: g => { if (g.salary > 0) { g.salary += 1500; g.peakSalary = Math.max(g.peakSalary, g.salary); } else { g.stats.smart = clamp(g.stats.smart + 10); } } }
+    ];
+
+    function resetMysteryCards() {
+      if (!game) return;
+      game.mysteryUsedThisYear = false;
+      document.getElementById('mysteryCardQuotaBadge').textContent = '올해 1회 가능';
+      document.getElementById('mysteryCardQuotaBadge').className = 'px-2.5 py-1 rounded-lg text-[10px] font-black bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40';
+
+      const grid = document.getElementById('mysteryCardsGrid');
+      grid.innerHTML = [0, 1, 2].map(idx => `
+        <button type="button" onclick="flipMysteryCard(${idx})"
+          class="p-4 rounded-2xl bg-gradient-to-b from-indigo-900/70 to-slate-950 border-2 border-fuchsia-500/40 hover:border-amber-400 hover:-translate-y-1 transition cursor-pointer flex flex-col items-center justify-center min-h-[115px] shadow-md">
+          <span class="text-2xl mb-1">🃏</span>
+          <span class="text-[11px] font-black text-fuchsia-200">운명 카드 #${idx + 1}</span>
+          <span class="text-[9px] text-slate-400 mt-0.5">클릭하여 오픈</span>
+        </button>
+      `).join('');
+    }
+
+    window.flipMysteryCard = function(selectedIdx) {
+      if (!game || game.isDead) return;
+      if (game.mysteryUsedThisYear) {
+        showToast('올해의 미스터리 카드는 이미 오픈했습니다! (+1년 진행 시 초기화)');
+        return;
+      }
+      game.mysteryUsedThisYear = true;
+      document.getElementById('mysteryCardQuotaBadge').textContent = '올해 사용 완료';
+      document.getElementById('mysteryCardQuotaBadge').className = 'px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-500';
+
+      // Pick 3 random distinct cards
+      const shuffled = [...MYSTERY_CARDS_POOL].sort(() => Math.random() - 0.5).slice(0, 3);
+      const chosen = shuffled[selectedIdx];
+      chosen.apply(game);
+
+      if (chosen.desc.includes('-')) {
+        SoundFX.fail();
+      } else {
+        SoundFX.fanfare('SR');
+        Confetti.burst(45);
+      }
+
+      addLog(game.age, `🃏 [미스터리 카드] ${chosen.title}: ${chosen.desc}`, true);
+
+      const grid = document.getElementById('mysteryCardsGrid');
+      grid.innerHTML = shuffled.map((card, idx) => {
+        const isPicked = idx === selectedIdx;
+        return `
+          <div class="p-3 rounded-2xl border text-center flex flex-col items-center justify-center min-h-[115px] animate-entry ${
+            isPicked
+              ? 'bg-indigo-950 border-amber-400 shadow-lg'
+              : 'bg-slate-950/60 border-slate-800 opacity-45'
+          }">
+            <span class="text-xl mb-1">${card.icon}</span>
+            <div class="text-[11px] font-black text-white leading-tight">${card.title}</div>
+            <div class="text-[9px] text-slate-300 mt-1 leading-snug">${card.desc}</div>
+          </div>
+        `;
+      }).join('');
+
+      renderGameUI();
+    };
+
+    /**
+     * 13. KOREAN LIFE CYCLE EVENTS & +1 YEAR PROGRESSION
+     */
+    function checkAgeEvent(age) {
+      if (age === 8) {
+        game.status = `${game.region.name} 초등학생`;
+        addLog(age, '초등학교에 입학했습니다.', true);
+      }
+
       if (age === 11) {
         return {
           tag: '유년기 교육',
-          title: '초등 고학년, 학원 스케줄의 기로',
-          desc: '주변 친구들이 하나둘 영어·수학 심화 학원에 다니기 시작합니다. 어떤 방과 후 생활을 보낼까요?',
+          title: '초등 고학년, 사교육의 기로',
+          desc: '주변 친구들이 영어·수학 심화 학원에 다니기 시작합니다.',
           choices: [
             {
-              label: '📚 영어·수학 선행학습 학원에 다닌다',
-              hint: '역량 +7, 행복도 -5 (자산 여유 시 효과 상승)',
+              label: '📚 영어·수학 선행학습 학원 등록',
+              hint: '역량 +8, 멘탈 -4, 학원비 -300만 원',
               action: () => {
-                const cost = 300;
-                state.netWorth -= cost;
-                state.stats.smart = clamp(state.stats.smart + (state.spoon.id === 'diamond' || state.spoon.id === 'gold' ? 10 : 7));
-                state.stats.happy = clamp(state.stats.happy - 5);
-                addLog(age, '선행학습 학원을 다니며 기초 학습 역량을 탄탄히 다졌습니다.', true);
+                game.netWorth -= 300;
+                game.stats.smart = clamp(game.stats.smart + 8);
+                game.stats.happy = clamp(game.stats.happy - 4);
+                addLog(age, '선행학습 학원을 다니며 학습 역량을 끌어올렸습니다.', true);
               }
             },
             {
-              label: '⚽ 운동부와 예체능 활동을 즐긴다',
-              hint: '건강 +8, 매력 +6, 행복도 +5',
+              label: '⚽ 운동부와 예체능 활동 집중',
+              hint: '건강 +8, 인맥 +6, 멘탈 +5',
               action: () => {
-                state.stats.health = clamp(state.stats.health + 8);
-                state.stats.charm = clamp(state.stats.charm + 6);
-                state.stats.happy = clamp(state.stats.happy + 5);
-                addLog(age, '친구들과 뛰어놀며 건강한 체력과 사교성을 길렀습니다.', true);
-              }
-            },
-            {
-              label: '🎮 집에서 게임과 유튜브로 자유시간을 보낸다',
-              hint: '행복도 +10, 역량 -3',
-              action: () => {
-                state.stats.happy = clamp(state.stats.happy + 10);
-                state.stats.smart = clamp(state.stats.smart - 3);
-                addLog(age, '학업 스트레스 없이 자유로운 어린 시절을 만끽했습니다.');
+                game.stats.health = clamp(game.stats.health + 8);
+                game.stats.charm = clamp(game.stats.charm + 6);
+                game.stats.happy = clamp(game.stats.happy + 5);
+                addLog(age, '운동과 예체능 활동으로 건강한 체력과 인맥을 길렀습니다.', true);
               }
             }
           ]
         };
       }
 
-      // 14세: 중학교 입학
       if (age === 14) {
-        state.status = '중학생';
-        addLog(age, '중학교에 진학했습니다. 본격적인 내신 시험이 시작됩니다.');
+        game.status = '중학생';
+        addLog(age, '중학교에 진학했습니다.');
       }
 
-      // 17세: 고등학교 진학 및 문/이과·진로 선택
       if (age === 17) {
         return {
-          tag: '진로 결정',
-          title: '고등학교 진학 & 트랙 선택',
-          desc: '고등학교에 입학했습니다. 향후 대학 입시와 커리어를 결정할 트랙을 선택하세요.',
+          tag: '진로 선택',
+          title: '고등학교 진학 트랙 선택',
+          desc: '향후 대입과 취업 방향을 결정할 고교 트랙을 선택하세요.',
           choices: [
             {
-              label: '🔬 이공계·의약학 트랙 (수학/과학 집중)',
-              hint: '역량 요구 높음 · 고연봉 직군 유리',
+              label: '🔬 이공계·의약학 집중 트랙',
+              hint: '역량 +6, 멘탈 -5 · 고연봉 직군 유리',
               action: () => {
-                state.status = '인문계고 (이공계 트랙)';
-                state.stats.smart = clamp(state.stats.smart + 5);
-                state.stats.happy = clamp(state.stats.happy - 6);
-                addLog(age, '이공계 트랙을 선택해 밤늦게까지 야간자율학습에 매진했습니다.', true);
+                game.status = '인문계고 (이공계)';
+                game.stats.smart = clamp(game.stats.smart + 6);
+                game.stats.happy = clamp(game.stats.happy - 5);
+                addLog(age, '이공계 트랙을 선택해 수학과 과학에 매진했습니다.', true);
               }
             },
             {
-              label: '⚖️ 인문·상경 트랙 (경영/법/언론 집중)',
-              hint: '역량 +3, 매력/인맥 +5',
+              label: '⚖️ 인문·상경 트랙',
+              hint: '역량 +3, 인맥 +6',
               action: () => {
-                state.status = '인문계고 (인문·상경 트랙)';
-                state.stats.smart = clamp(state.stats.smart + 3);
-                state.stats.charm = clamp(state.stats.charm + 5);
-                addLog(age, '인문·상경 트랙을 선택해 토론과 학생회 활동에 참여했습니다.', true);
+                game.status = '인문계고 (인문·상경)';
+                game.stats.smart = clamp(game.stats.smart + 3);
+                game.stats.charm = clamp(game.stats.charm + 6);
+                addLog(age, '인문·상경 트랙을 선택해 토론과 학생회 활동을 주도했습니다.', true);
               }
             },
             {
-              label: '🛠️ 특성화고·마이스터고 진학 (조기 취업 목표)',
-              hint: '대학 대신 20세 즉시 현장 취업 도전 가능',
+              label: '🛠️ 마이스터고 조기 취업 트랙',
+              hint: '19세 즉시 현장 취업 도전 가능',
               action: () => {
-                state.status = '특성화고 재학생';
-                state.education = '특성화고 졸업 예정';
-                state.stats.smart = clamp(state.stats.smart + 4);
-                addLog(age, '실무 기술을 익혀 빠르게 사회에 진출하기로 결심했습니다.', true);
+                game.status = '마이스터고 재학생';
+                game.education = '마이스터고 졸업 예정';
+                game.stats.smart = clamp(game.stats.smart + 5);
+                addLog(age, '실무 기술 자격증을 취득하며 조기 취업을 준비합니다.', true);
               }
             }
           ]
         };
       }
 
-      // 19세: 대학수학능력시험 & 입시 결과
       if (age === 19) {
         return {
           tag: '인생 분기점',
           title: '운명의 대학수학능력시험 (수능)',
-          desc: `현재 역량 지수(${state.stats.smart}점)를 바탕으로 대입/사회 진출 결정을 내릴 시간입니다.`,
+          desc: `현재 역량(${game.stats.smart}점)을 바탕으로 대입 혹은 조기 취업을 결정합니다.`,
           choices: [
             {
-              label: '✍️ 정시/수시 대학 입시에 도전한다',
-              hint: '역량 수치에 따라 SKY·인서울·지방대 진학 결정',
+              label: '✍️ 대학 입시에 도전한다',
+              hint: '역량 수치에 따라 SKY·인서울·지방대 결정',
               action: () => {
-                const score = state.stats.smart + randInt(-8, 10);
-                if (score >= 86) {
-                  state.education = 'SKY / 카이스트';
-                  state.status = 'SKY 명문대 대학생';
-                  state.stats.charm = clamp(state.stats.charm + 10);
-                  addLog(age, '🎉 수능 대박! 대한민국 최상위 명문대(SKY)에 합격했습니다!', true);
+                const score = game.stats.smart + randInt(-6, 10);
+                if (score >= 85) {
+                  game.education = 'SKY / 카이스트';
+                  game.status = 'SKY 명문대 대학생';
+                  game.stats.charm = clamp(game.stats.charm + 10);
+                  addLog(age, '🎉 수능 대박! 최상위 명문대(SKY)에 합격했습니다!', true);
                   addMilestone('SKY 명문대 합격');
-                } else if (score >= 68) {
-                  state.education = '인서울 주요 대학';
-                  state.status = '인서울 4년제 대학생';
-                  state.stats.charm = clamp(state.stats.charm + 5);
-                  addLog(age, '🎓 치열한 경쟁을 뚫고 인서울 4년제 대학에 합격했습니다!', true);
-                  addMilestone('인서울 4년제 대학 입학');
+                } else if (score >= 67) {
+                  game.education = '인서울 4년제 대학';
+                  game.status = '인서울 대학생';
+                  game.stats.charm = clamp(game.stats.charm + 5);
+                  addLog(age, '🎓 인서울 4년제 대학에 합격했습니다!', true);
+                  addMilestone('인서울 대학 입학');
                 } else if (score >= 48) {
-                  state.education = '지방 거점/4년제 대학';
-                  state.status = '4년제 대학생';
-                  addLog(age, '4년제 대학교에 진학해 대학 생활을 시작했습니다.', true);
-                  addMilestone('4년제 대학 입학');
+                  game.education = '4년제 대학교';
+                  game.status = '4년제 대학생';
+                  addLog(age, '4년제 대학교에 진학했습니다.', true);
                 } else {
-                  state.education = '전문대 / 고졸';
-                  state.status = '전문대학생';
-                  addLog(age, '아쉬운 성적을 받아 전문대학에 진학해 실무 자격증을 준비합니다.');
+                  game.education = '전문대 / 고졸';
+                  game.status = '전문대학생';
+                  addLog(age, '전문대학에 진학해 실무 역량을 쌓습니다.');
                 }
-                // 등록금 부담 반영
-                if (state.spoon.id === 'dirt' || state.spoon.id === 'bronze') {
-                  state.netWorth -= 1200;
-                  addLog(age, '학자금 대출 1,200만 원을 안고 대학 생활을 시작합니다.');
+                if (game.spoon.id === 'dirt' || game.spoon.id === 'bronze') {
+                  game.netWorth -= 1000;
+                  addLog(age, '학자금 대출 1,000만 원을 안고 대학 생활을 시작합니다.');
                 }
               }
             },
             {
-              label: '💼 대학 진학 대신 곧바로 취업 전선에 뛰어든다',
-              hint: '등록금 빚 없이 즉시 연봉 소득 시작',
+              label: '💼 대학 대신 곧바로 취업 전선에 뛰어든다',
+              hint: '학자금 빚 없이 19세부터 연봉 소득 시작',
               action: () => {
-                state.education = state.education.includes('특성화고') ? '특성화고 졸업' : '고등학교 졸업';
-                state.jobTier = 'sme';
-                state.salary = 3000;
-                state.peakSalary = Math.max(state.peakSalary, state.salary);
-                state.status = '중소기업 사원 (고졸 공채)';
-                addLog(age, '대학 등록금 대신 실전 경력을 택해 중소기업 정직원으로 입사했습니다!', true);
+                game.education = '고등학교 졸업';
+                game.jobTier = 'early_sme';
+                game.salary = 3200;
+                game.peakSalary = Math.max(game.peakSalary, game.salary);
+                game.status = '중견/중소기업 고졸 공채 사원';
+                addLog(age, '조기 취업을 선택해 또래보다 5년 먼저 연봉을 모으기 시작했습니다!', true);
                 addMilestone('19세 조기 취업 성공');
               }
             }
@@ -902,192 +1945,141 @@
         };
       }
 
-      // 24세: 본격 취업 시장 도전 (대학생인 경우)
-      if (age === 24 && state.jobTier === 'none') {
-        const eduBonus = state.education.includes('SKY') ? 22
-          : state.education.includes('인서울') ? 12
-          : state.education.includes('4년제') ? 4 : -4;
-        const totalPower = state.stats.smart + Math.floor(state.stats.charm * 0.3) + eduBonus;
-
+      if (age === 24 && game.jobTier === 'none') {
+        const eduBonus = game.education.includes('SKY') ? 22 : game.education.includes('인서울') ? 12 : 4;
+        const power = game.stats.smart + Math.floor(game.stats.charm * 0.3) + eduBonus;
         return {
           tag: '취업 전쟁',
           title: '졸업 시즌, 대한민국 취업 시장 도전',
-          desc: `최종 학력(${state.education})과 역량(${state.stats.smart})을 무기로 첫 직장에 지원합니다. 어디에 지원할까요?`,
+          desc: `최종 학력(${game.education})으로 첫 직장에 지원합니다.`,
           choices: [
             {
-              label: `🏢 대기업 / 빅테크 공채 도전 (예상 합격률 ${clamp(totalPower - 25, 10, 90)}%)`,
-              hint: '초봉 5,200만 원 · 높은 경쟁률',
+              label: `🏢 대기업 / 빅테크 공채 도전 (합격률 ${clamp(power - 22, 15, 92)}%)`,
+              hint: '초봉 5,500만 원',
               action: () => {
-                const chance = clamp(totalPower - 25, 10, 90);
-                if (randInt(1, 100) <= chance) {
-                  state.jobTier = 'conglomerate';
-                  state.salary = 5200;
-                  state.status = '대기업 신입사원';
-                  addLog(age, '🎊 서류와 압박 면접을 뚫고 대기업 신입사원으로 최종 합격했습니다!', true);
-                  addMilestone('대기업 공채 입사');
+                if (randInt(1, 100) <= clamp(power - 22, 15, 92)) {
+                  game.jobTier = 'conglomerate';
+                  game.salary = 5500;
+                  game.status = '대기업 신입사원';
+                  addLog(age, '🎊 대기업 공채에 최종 합격했습니다!', true);
+                  addMilestone('대기업 공채 합격');
                 } else {
-                  state.jobTier = 'sme';
-                  state.salary = 3200;
-                  state.status = '중소기업 사원';
-                  state.stats.happy = clamp(state.stats.happy - 8);
-                  addLog(age, '대기업 최종 면접에서 고배를 마시고, 중소기업에서 첫 커리어를 시작합니다.');
-                  addMilestone('중소기업 첫 입사');
+                  game.jobTier = 'sme';
+                  game.salary = 3300;
+                  game.status = '중소기업 사원';
+                  game.stats.happy = clamp(game.stats.happy - 6);
+                  addLog(age, '대기업 면접에서 아쉽게 탈락해 중소기업에서 커리어를 시작합니다.');
                 }
-                state.peakSalary = Math.max(state.peakSalary, state.salary);
+                game.peakSalary = Math.max(game.peakSalary, game.salary);
               }
             },
             {
-              label: `🏛️ 공무원 / 공기업 시험 도전 (예상 합격률 ${clamp(state.stats.smart - 15, 15, 85)}%)`,
-              hint: '초봉 3,600만 원 · 철밥통 안정성 및 연금',
+              label: `🏛️ 공무원 / 공기업 시험 도전 (합격률 ${clamp(game.stats.smart - 12, 20, 88)}%)`,
+              hint: '초봉 3,700만 원 · 철밥통 안정성',
               action: () => {
-                const chance = clamp(state.stats.smart - 15, 15, 85);
-                if (randInt(1, 100) <= chance) {
-                  state.jobTier = 'civil';
-                  state.salary = 3600;
-                  state.status = '공무원 / 공기업 주임';
-                  addLog(age, '🏛️ 치열한 경쟁률을 뚫고 공직/공기업 입성에 성공했습니다!', true);
+                if (randInt(1, 100) <= clamp(game.stats.smart - 12, 20, 88)) {
+                  game.jobTier = 'civil';
+                  game.salary = 3700;
+                  game.status = '공무원 / 공기업 주임';
+                  addLog(age, '🏛️ 치열한 경쟁을 뚫고 공직 입성에 성공했습니다!', true);
                   addMilestone('공무원/공기업 합격');
                 } else {
-                  state.jobTier = 'parttime';
-                  state.salary = 2400;
-                  state.status = '취준생 겸 아르바이트';
-                  state.stats.happy = clamp(state.stats.happy - 10);
-                  addLog(age, '필기시험에서 아쉽게 낙방하여 아르바이트를 병행하며 다음 기회를 노립니다.');
+                  game.jobTier = 'parttime';
+                  game.salary = 2500;
+                  game.status = '취준생 겸 프리랜서';
+                  addLog(age, '공채 시험에서 아쉽게 낙방해 아르바이트로 생계를 이어갑니다.');
                 }
-                state.peakSalary = Math.max(state.peakSalary, state.salary);
+                game.peakSalary = Math.max(game.peakSalary, game.salary);
               }
             },
             {
-              label: '🚀 유망 스타트업 / 창업 전선 합류',
-              hint: '초봉 4,000만 원 · 스톡옵션 대박 또는 야근 리스크',
+              label: '🚀 판교 유망 스타트업 합류',
+              hint: '초봉 4,200만 원 · 빠른 성장 & 스톡옵션',
               action: () => {
-                state.jobTier = 'startup';
-                state.salary = 4000;
-                state.status = '판교 스타트업 매니저';
-                state.stats.smart = clamp(state.stats.smart + 6);
-                state.stats.health = clamp(state.stats.health - 5);
-                addLog(age, '🚀 빠르게 성장하는 판교 스타트업에 합류해 밤낮없이 실무를 익힙니다!', true);
+                game.jobTier = 'startup';
+                game.salary = 4200;
+                game.status = '판교 스타트업 매니저';
+                game.stats.smart = clamp(game.stats.smart + 6);
+                addLog(age, '🚀 판교 스타트업에 합류해 폭발적으로 실무를 익힙니다!', true);
                 addMilestone('판교 스타트업 입사');
-                state.peakSalary = Math.max(state.peakSalary, state.salary);
+                game.peakSalary = Math.max(game.peakSalary, game.salary);
               }
             }
           ]
         };
       }
 
-      // 29세: 코인/주식 불장 vs 안전 자산 투자 이벤트
-      if (age === 29) {
-        return {
-          tag: '자산 증식',
-          title: '대한민국 자산 시장 광풍! 투자 선택',
-          desc: '주변 동료들이 주식과 가상자산으로 큰돈을 벌었다는 소식이 들려옵니다. 시드머니를 어떻게 운용할까요?',
-          choices: [
-            {
-              label: '🔥 레버리지 풀매수! 공격적 주식·코인 투자',
-              hint: '성공 시 자산 2배 폭등 / 실패 시 큰 손실',
-              action: () => {
-                const win = Math.random() < (0.42 + state.stats.smart * 0.002);
-                const stake = Math.max(2000, Math.abs(state.netWorth) * 0.6);
-                if (win) {
-                  const profit = Math.round(stake * 1.4);
-                  state.netWorth += profit;
-                  state.stats.happy = clamp(state.stats.happy + 12);
-                  addLog(age, `📈 불장에 정확히 탑승해 ${formatKRW(profit)}의 투자 수익을 거뒀습니다!`, true);
-                  addMilestone(`투자 대박 (+${formatKRW(profit)})`);
-                } else {
-                  const loss = Math.round(stake * 0.8);
-                  state.netWorth -= loss;
-                  state.stats.happy = clamp(state.stats.happy - 15);
-                  addLog(age, `📉 갑작스러운 폭락장으로 ${formatKRW(loss)}의 손실을 입었습니다...`);
-                }
-              }
-            },
-            {
-              label: '🏦 S&P500 지수 적립식 & 예적금 분산 투자',
-              hint: '안정적인 수익률 + 멘탈 유지',
-              action: () => {
-                const gain = Math.round(Math.max(800, state.netWorth * 0.18));
-                state.netWorth += gain;
-                addLog(age, `📊 우량 지수 분산 투자를 통해 ${formatKRW(gain)}의 안정적 수익을 냈습니다.`, true);
-              }
-            }
-          ]
-        };
-      }
-
-      // 33세: 결혼 & 내 집 마련(영끌 vs 전세)
-      if (age === 33) {
+      if (age === 32) {
         return {
           tag: '인생 중대사',
-          title: '결혼과 주거 안정의 기로',
-          desc: '서른셋, 주변에서 청첩장이 날아오고 주거 형태를 결정해야 할 시기가 왔습니다.',
+          title: '결혼과 영끌 내 집 마련의 기로',
+          desc: '주거 안정과 결혼 여부를 결정해야 할 시기가 왔습니다.',
           choices: [
             {
               label: '💍 결혼하고 영끌 대출로 수도권 아파트 매수',
-              hint: '기혼 전환 · 초기 부채 증가 후 부동산 가치 상승 기대',
+              hint: '기혼 전환 · 부동산 시세차익 반영 (+9,000만 원)',
               action: () => {
-                state.married = true;
-                state.children = Math.random() < 0.65 ? 1 : 0;
-                state.hasHouse = true;
-                state.netWorth += 8000; // 배우자 자산 합산 + 향후 시세차익 반영
-                state.stats.happy = clamp(state.stats.happy + 10);
-                addLog(age, `💍 사랑하는 사람과 결혼하고 영끌 끝에 내 집 마련에 성공했습니다!${state.children ? ' 예쁜 아이도 태어났습니다.' : ''}`, true);
+                game.married = true;
+                game.children = Math.random() < 0.7 ? 1 : 0;
+                game.hasHouse = true;
+                game.netWorth += 9000;
+                game.stats.happy = clamp(game.stats.happy + 10);
+                addLog(age, `💍 결혼과 동시에 영끌 내 집 마련에 성공했습니다!${game.children ? ' 아이도 태어났습니다.' : ''}`, true);
                 addMilestone('결혼 및 내 집 마련');
               }
             },
             {
-              label: '🏡 비혼/싱글 라이프 유지하며 커리어와 자산 집중',
-              hint: '싱글 유지 · 양육비 없이 자유로운 자산 축적',
+              label: '🏡 비혼 싱글 라이프 유지하며 자산에 올인',
+              hint: '싱글 유지 · 양육비 없이 자유로운 자산 증식 (+3,500만 원)',
               action: () => {
-                state.married = false;
-                state.netWorth += 3000;
-                state.stats.smart = clamp(state.stats.smart + 5);
-                addLog(age, '비혼주의를 선택해 오롯이 나 자신의 커리어와 자유로운 삶에 투자합니다.', true);
-                addMilestone('비혼 커리어 라이프 선택');
+                game.married = false;
+                game.netWorth += 3500;
+                game.stats.smart = clamp(game.stats.smart + 5);
+                addLog(age, '비혼주의를 선택해 나만의 커리어와 자산 증식에 집중합니다.', true);
+                addMilestone('비혼 싱글 라이프 선택');
               }
             }
           ]
         };
       }
 
-      // 38세: 커리어 도약 (이직 스카우트 / 창업 / 임원 승진)
       if (age === 38) {
         return {
           tag: '커리어 피크',
-          title: '30대 후반, 커리어 전환점 제안',
-          desc: '10년 차 이상의 경력이 쌓이면서 헤드헌터와 업계에서 매력적인 제안이 들어옵니다.',
+          title: '30대 후반, 점프업 이직 vs 창업 승부수',
+          desc: '10년 차 경력이 쌓이면서 인생 최대의 커리어 기회가 찾아옵니다.',
           choices: [
             {
-              label: '🦄 연봉 40% 점프 이직 / 핵심 리더 승진 수락',
-              hint: '연봉 대폭 상승 · 업무 강도 증가',
+              label: '🦄 연봉 45% 점프 이직 / 핵심 리더 승진',
+              hint: '연봉 대폭 상승 · 건강 -6',
               action: () => {
-                state.salary = Math.round(state.salary * 1.42) + 1500;
-                state.peakSalary = Math.max(state.peakSalary, state.salary);
-                state.status = state.jobTier === 'civil' ? '사무관/팀장급 공직자' : '대기업/IT 핵심 팀장';
-                state.stats.health = clamp(state.stats.health - 8);
-                addLog(age, `🚀 성공적인 이직과 승진으로 연봉 ${formatKRW(state.salary)} 시대를 열었습니다!`, true);
-                addMilestone(`연봉 ${formatKRW(state.salary)} 달성`);
+                game.salary = Math.round(game.salary * 1.45) + 1800;
+                game.peakSalary = Math.max(game.peakSalary, game.salary);
+                game.status = game.jobTier === 'civil' ? '사무관/팀장급 공직자' : '대기업/IT 핵심 리더';
+                game.stats.health = clamp(game.stats.health - 6);
+                addLog(age, `🚀 성공적인 이직과 승진으로 연봉 ${formatKRW(game.salary)}을 달성했습니다!`, true);
+                addMilestone(`연봉 ${formatKRW(game.salary)} 달성`);
               }
             },
             {
-              label: '👑 내 사업을 시작한다 (창업 / 전문직 개업)',
-              hint: '성공 시 수십억 자산가 도약 / 실패 리스크 존재',
+              label: '👑 내 사업을 창업한다 (CEO 도전)',
+              hint: '성공 시 자산 +6억 & CEO / 실패 리스크 존재',
               action: () => {
-                const success = Math.random() < (0.38 + state.stats.smart * 0.003 + state.stats.charm * 0.002);
-                if (success) {
-                  state.jobTier = 'business';
-                  state.salary = randInt(15000, 35000);
-                  state.peakSalary = Math.max(state.peakSalary, state.salary);
-                  state.netWorth += 45000;
-                  state.status = '중견기업/스타트업 대표이사';
-                  addLog(age, '👑 창업한 사업이 대박을 터뜨리며 업계가 주목하는 CEO가 되었습니다!', true);
-                  addMilestone('창업 성공 및 CEO 취임');
+                const winProb = 0.42 + game.stats.smart * 0.0025 + (game.mods.luckBonus || 0);
+                if (Math.random() < winProb) {
+                  game.jobTier = 'business';
+                  game.salary = randInt(18000, 38000);
+                  game.peakSalary = Math.max(game.peakSalary, game.salary);
+                  game.netWorth += 60000;
+                  game.status = '유니콘 스타트업 CEO';
+                  addLog(age, '👑 창업한 회사가 대박을 터뜨리며 업계가 주목하는 CEO가 되었습니다!', true);
+                  addMilestone('창업 대성공 및 CEO 취임');
                 } else {
-                  state.netWorth -= 12000;
-                  state.salary = 3500;
-                  state.status = '재기 준비 중인 프리랜서';
-                  state.stats.happy = clamp(state.stats.happy - 15);
-                  addLog(age, '사업 초기 자금난과 시장 침체로 폐업의 아픔을 겪었습니다.');
+                  game.netWorth -= 10000;
+                  game.salary = 3800;
+                  game.status = '재기 준비 중인 프리랜서';
+                  game.stats.happy = clamp(game.stats.happy - 12);
+                  addLog(age, '초기 자금난으로 사업 폐업의 아픔을 겪었습니다.');
                 }
               }
             }
@@ -1095,398 +2087,335 @@
         };
       }
 
-      // 47세: 중년의 위기와 건강검진 / 부동산 사이클
-      if (age === 47) {
-        return {
-          tag: '중년의 선택',
-          title: '40대 후반, 종합건강검진 & 자산 리밸런싱',
-          desc: '바쁘게 달려온 40대 후반, 몸에서 보내는 신호와 노후 준비를 점검해야 할 때입니다.',
-          choices: [
-            {
-              label: '🏥 안식년 휴식과 정밀 건강관리에 투자한다',
-              hint: '건강 +18, 행복 +10, 단기 소득 소폭 감소',
-              action: () => {
-                state.stats.health = clamp(state.stats.health + 18);
-                state.stats.happy = clamp(state.stats.happy + 10);
-                state.netWorth -= 2500;
-                addLog(age, '잠시 숨을 고르며 건강을 회복하고 가족과 소중한 시간을 보냈습니다.', true);
-              }
-            },
-            {
-              label: '🏢 상가·부동산 추가 투자로 노후 현금흐름을 만든다',
-              hint: '순자산 상승 / 건강 -8',
-              action: () => {
-                const gain = randInt(12000, 35000);
-                state.netWorth += gain;
-                state.stats.health = clamp(state.stats.health - 8);
-                addLog(age, `🏢 부동산 가치 상승과 임대 수익으로 순자산이 ${formatKRW(gain)} 증가했습니다!`, true);
-              }
-            }
-          ]
-        };
-      }
-
-      // 60세: 정년 은퇴
       if (age === 60) {
-        const oldStatus = state.status;
-        state.status = state.netWorth >= 100000 ? '은퇴한 자산가' : '은퇴자';
-        state.salary = state.jobTier === 'civil' ? 3200 : 1400; // 연금 소득 전환
-        addLog(age, `🌅 정년 은퇴를 맞이했습니다. (${oldStatus} → ${state.status}, 연금 소득 전환)`, true);
+        game.status = game.netWorth >= 100000 ? '은퇴한 자산가' : '은퇴자';
+        game.salary = game.jobTier === 'civil' ? 3500 : 1500;
+        addLog(age, `🌅 정년 은퇴를 맞이해 연금 생활을 시작합니다.`, true);
         addMilestone('정년 은퇴');
       }
 
       return null;
     }
 
-    // 10. 선택지 처리
-    window.resolveChoice = function(choiceIndex) {
+    window.resolveChoice = function(idx) {
       if (!pendingEvent) return;
-      const choice = pendingEvent.choices[choiceIndex];
+      SoundFX.click();
+      const ch = pendingEvent.choices[idx];
       pendingEvent = null;
-      if (choice && choice.action) {
-        choice.action();
-      }
+      if (ch && ch.action) ch.action();
       checkDeathCondition();
-      renderUI();
+      renderGameUI();
     };
 
-    // 11. 매년 진행 (+1년) 로직
     function advanceOneYear() {
-      if (state.isDead || pendingEvent) return;
+      if (!game || game.isDead || pendingEvent) return;
+      SoundFX.tick();
 
-      state.age += 1;
-      const age = state.age;
+      game.age += 1;
+      const age = game.age;
+      resetMysteryCards();
 
-      // 1) 집중 활동 반영
-      if (state.focus === 'study') {
-        state.stats.smart = clamp(state.stats.smart + randInt(1, 3));
-      } else if (state.focus === 'invest') {
-        if (state.netWorth > 0) {
-          state.netWorth += Math.round(state.netWorth * (randInt(4, 11) / 100));
-        } else {
-          state.netWorth += 300;
-        }
-      } else if (state.focus === 'health') {
-        state.stats.health = clamp(state.stats.health + randInt(2, 4));
-      } else if (state.focus === 'rest') {
-        state.stats.happy = clamp(state.stats.happy + randInt(2, 5));
-      } else if (state.focus === 'side' && age >= 20) {
-        const sideIncome = randInt(400, 1500) + state.stats.smart * 8;
-        state.netWorth += sideIncome;
+      // 1) Focus activity
+      if (game.focus === 'study') {
+        game.stats.smart = clamp(game.stats.smart + randInt(1, 3));
+      } else if (game.focus === 'invest') {
+        const rate = (randInt(4, 10) / 100) + (game.mods.investBonus || 0);
+        if (game.netWorth > 0) game.netWorth += Math.round(game.netWorth * rate);
+        else game.netWorth += 350;
+      } else if (game.focus === 'health') {
+        game.stats.health = clamp(game.stats.health + randInt(2, 4));
+      } else if (game.focus === 'rest') {
+        game.stats.happy = clamp(game.stats.happy + randInt(2, 4) + (game.mods.happyRegen || 0));
+      } else if (game.focus === 'side' && age >= 20) {
+        game.netWorth += randInt(500, 1400) + game.stats.smart * 8 + (game.mods.sideBonus || 0);
       }
 
-      // 2) 매년 근로 소득 및 생활비 정산
+      // 2) Relic passive yearly income & base invest growth
+      if (age >= 20 && game.mods.yearlyBonus) {
+        game.netWorth += game.mods.yearlyBonus;
+      }
+      if (game.mods.investBonus && game.focus !== 'invest' && game.netWorth > 0) {
+        game.netWorth += Math.round(game.netWorth * (game.mods.investBonus * 0.5));
+      }
+
+      // 3) Salary & living expenses
       if (age < 20) {
-        state.netWorth += state.spoon.allowance;
-      } else if (state.salary > 0) {
-        // 연봉 자연 상승 (60세 이전)
+        game.netWorth += game.spoon.allowance + (game.mods.youthAllowance || 0);
+      } else if (game.salary > 0) {
         if (age < 60) {
-          state.salary = Math.round(state.salary * 1.035);
-          state.peakSalary = Math.max(state.peakSalary, state.salary);
+          const growth = 1.035 + (game.mods.salaryGrowth || 0);
+          game.salary = Math.round(game.salary * growth);
+          game.peakSalary = Math.max(game.peakSalary, game.salary);
         }
-        // 세후 저축 가능액 (지역 물가 & 부양가족 반영)
-        const livingCost = Math.round((1600 + (state.married ? 900 : 0) + state.children * 700) * state.region.costMod);
-        const netSavings = Math.round(state.salary * 0.78) - livingCost;
-        state.netWorth += netSavings;
+        const livingCost = Math.round((1500 + (game.married ? 800 : 0) + game.children * 650) * game.region.costMod);
+        game.netWorth += Math.round(game.salary * 0.78) - livingCost;
       }
 
-      // 3) 나이에 따른 자연 체력 변화
-      if (age >= 45) {
-        state.stats.health = clamp(state.stats.health - randInt(1, age >= 65 ? 4 : 2));
+      // 4) Aging
+      if (age >= 45 && !game.mods.antiAging) {
+        game.stats.health = clamp(game.stats.health - randInt(1, age >= 68 ? 4 : 2));
       }
 
-      // 4) 특정 연령대 고정 이벤트 확인
-      const majorEvent = checkAgeEvent(age);
-      if (majorEvent) {
-        pendingEvent = majorEvent;
-        renderUI();
+      // 5) Check major age event
+      const ev = checkAgeEvent(age);
+      if (ev) {
+        pendingEvent = ev;
+        renderGameUI();
         return;
       }
 
-      // 5) 일반 연도 랜덤 일상/사회 이벤트
-      triggerAmbientEvent(age);
+      // 6) Ambient log if none logged this year
+      if (game.logs.length === 0 || game.logs[0].age !== age) {
+        const ambient = age < 20
+          ? ['학업과 교우 관계를 이어가며 성장했습니다.', '모의고사 준비로 바쁜 한 해를 보냈습니다.']
+          : age < 60
+            ? ['직장과 일상에서 묵묵히 커리어를 쌓았습니다.', '재테크와 자기계발을 병행하며 한 해를 보냈습니다.', '성과급과 연말정산 환급금을 알뜰히 저축했습니다.']
+            : ['여유로운 산책과 취미 생활로 평온한 노후를 보냈습니다.', '건강 검진을 받으며 컨디션을 관리했습니다.'];
+        addLog(age, ambient[randInt(0, ambient.length - 1)], false);
+      }
 
-      // 6) 사망/엔딩 조건 체크
       checkDeathCondition();
-      renderUI();
+      renderGameUI();
     }
 
-    function triggerAmbientEvent(age) {
-      // 이미 로그가 찍힌 해는 스킵 가능
-      if (state.logs.length > 0 && state.logs[0].age === age) return;
-
-      const pool = [];
-      if (age < 13) {
-        pool.push(
-          { text: '학교 받아쓰기/수학 시험에서 좋은 성적을 받아 칭찬을 들었습니다.', dSmart: 2, dHappy: 2 },
-          { text: '계절성 감기에 걸려 며칠 동안 앓아누웠습니다.', dHealth: -3, dHappy: -2 },
-          { text: '가족과 함께 국내 여행을 다녀오며 즐거운 추억을 쌓았습니다.', dHappy: 4 }
-        );
-      } else if (age < 20) {
-        pool.push(
-          { text: '모의고사 성적이 오르며 공부에 자신감이 붙었습니다.', dSmart: 3, dHappy: 2 },
-          { text: '입시 스트레스와 수면 부족으로 피로가 누적되었습니다.', dHealth: -3, dHappy: -3 },
-          { text: '동아리 축제에서 활약하며 친구들 사이에서 인기가 높아졌습니다.', dCharm: 3, dHappy: 3 }
-        );
-      } else if (age < 60) {
-        pool.push(
-          { text: '직장에서 프로젝트를 성공적으로 마무리해 성과급을 받았습니다.', dMoney: 800, dHappy: 3 },
-          { text: '잦은 야근과 회식으로 번아웃 증세가 찾아왔습니다.', dHealth: -4, dHappy: -5 },
-          { text: '지인의 소개로 좋은 인맥을 넓히고 업계 인사이트를 얻었습니다.', dCharm: 3, dSmart: 2 },
-          { text: '청약 통장을 꾸준히 납입하며 내 집 마련의 꿈을 키웠습니다.', dMoney: 400 },
-          { text: '물가 상승으로 체감 생활비가 늘어나 지갑이 얇아졌습니다.', dMoney: -500, dHappy: -2 }
-        );
-      } else {
-        pool.push(
-          { text: '동네 공원을 산책하며 평온한 노후의 일상을 보냈습니다.', dHealth: 1, dHappy: 3 },
-          { text: '정기 검진에서 혈압·혈당 관리를 권고받았습니다.', dHealth: -4 },
-          { text: '오랜 지인들과 모여 젊은 시절의 무용담을 나누었습니다.', dHappy: 4 }
-        );
-      }
-
-      const ev = pool[randInt(0, pool.length - 1)];
-      if (ev.dSmart) state.stats.smart = clamp(state.stats.smart + ev.dSmart);
-      if (ev.dHealth) state.stats.health = clamp(state.stats.health + ev.dHealth);
-      if (ev.dHappy) state.stats.happy = clamp(state.stats.happy + ev.dHappy);
-      if (ev.dCharm) state.stats.charm = clamp(state.stats.charm + ev.dCharm);
-      if (ev.dMoney) state.netWorth += ev.dMoney;
-
-      addLog(age, ev.text, false);
-    }
-
-    // 12. 사망 및 엔딩 판정
+    /**
+     * 14. ENDING EVALUATION, DIAMOND REWARD & ENCYCLOPEDIA UNLOCK
+     */
     function checkDeathCondition() {
-      if (state.isDead) return;
-
-      if (state.stats.health <= 0) {
-        triggerEnding(state.age < 60 ? '과로 및 건강 악화로 요절' : '지병 악화로 영면');
+      if (game.isDead) return;
+      if (game.stats.health <= 0) {
+        triggerEnding(game.age < 45 ? '과로 및 건강 악화로 요절' : '지병 악화로 영면');
         return;
       }
-      if (state.stats.happy <= 0) {
+      if (game.stats.happy <= 0) {
         triggerEnding('극심한 번아웃과 멘탈 붕괴로 은둔');
         return;
       }
-      // 고령 자연사 확률 (75세 이후 급증)
-      if (state.age >= 75) {
-        const deathProb = (state.age - 74) * 5 + (100 - state.stats.health) * 0.4;
-        if (randInt(1, 100) <= deathProb || state.age >= 100) {
+      if (game.age >= 76) {
+        const deathProb = (game.age - 75) * 5 + (100 - game.stats.health) * 0.35;
+        if (randInt(1, 100) <= deathProb || game.age >= 102) {
           triggerEnding('천수를 누리고 평화롭게 영면');
         }
       }
     }
 
-    // 13. 최종 칭호 및 엔딩 생성
-    function evaluateFinalTitle() {
-      const nw = state.netWorth;
-      const isLowStart = state.spoon.id === 'dirt' || state.spoon.id === 'bronze';
+    function determineEndingTitle(cause) {
+      const nw = game.netWorth;
+      const isLowStart = game.spoon.id === 'dirt' || game.spoon.id === 'bronze';
 
-      if (state.age < 45) {
-        return {
-          title: '“너무 일찍 져버린 청춘의 별”',
-          epitaph: '치열한 대한민국 사회의 무게를 견디다 너무 이른 나이에 여정을 멈췄습니다.'
-        };
-      }
-      if (nw >= 300000 && isLowStart) {
-        return {
-          title: '“흙수저에서 일군 대한민국 슈퍼리치”',
-          epitaph: '불리한 출발선을 압도적인 실행력과 결단으로 뒤집고 부의 정점에 섰습니다.'
-        };
-      }
-      if (nw >= 300000) {
-        return {
-          title: '“강남 스카이라인을 소유한 대자산가”',
-          epitaph: '막대한 자산과 커리어를 모두 거머쥐며 대한민국 상위 0.1%의 삶을 완성했습니다.'
-        };
-      }
-      if (nw >= 100000) {
-        return {
-          title: '“서울 자가에 연금까지 갖춘 성공한 중산층”',
-          epitaph: '치열한 생존 경쟁을 뚫고 경제적 자유와 안정된 노후를 모두 쟁취했습니다.'
-        };
-      }
-      if (state.jobTier === 'civil') {
-        return {
-          title: '“국민을 위해 봉사한 청렴한 공직자”',
-          epitaph: '화려한 일확천금 대신 흔들리지 않는 사명감과 연금으로 평온한 삶을 살았습니다.'
-        };
-      }
-      if (nw < 0) {
-        return {
-          title: '“빚더미 속에서도 끝까지 버틴 불굴의 생존자”',
-          epitaph: '경제적 풍파는 거셌지만, 결코 삶을 포기하지 않고 끝까지 자신의 자리를 지켰습니다.'
-        };
-      }
-      return {
-        title: '“묵묵히 제 몫을 다한 대한민국의 소시민”',
-        epitaph: '거창한 타이틀은 없었으나, 가족과 일상을 지키며 누구보다 성실한 일생을 보냈습니다.'
-      };
+      if (cause.includes('마감')) return { title: '미완의 악보로 남은 짧은 생애', epitaph: '스스로 인생의 마침표를 찍었습니다.' };
+      if (game.age < 45) return { title: '너무 일찍 져버린 청춘의 별', epitaph: '치열한 생존 경쟁의 무게를 견디다 이른 나이에 여정을 멈췄습니다.' };
+      if (game.stats.happy <= 0) return { title: '지쳐버린 현대인의 자화상', epitaph: '끝없는 압박감 속에 마음의 문을 닫고 은둔의 길을 택했습니다.' };
+      if (nw >= 300000 && isLowStart) return { title: '흙수저에서 일군 대한민국 슈퍼리치', epitaph: '불리한 출발선을 압도적 결단으로 뒤집고 부의 정점에 섰습니다!' };
+      if (nw >= 500000) return { title: '강남 스카이라인을 소유한 대자산가', epitaph: '막대한 부와 명예를 거머쥐며 대한민국 상위 0.1%의 삶을 완성했습니다.' };
+      if (game.wonLotto1st) return { title: '인생역전 로또 1등의 전설', epitaph: '천운의 번호 6개로 팔자를 고친 전설적인 행운아입니다.' };
+      if (game.wonCoin10x) return { title: '화성 갈끄니까! 코인 10배 떡상 신화', epitaph: '야수의 심장으로 불장에 올라타 전설적인 수익률을 기록했습니다.' };
+      if (game.jobTier === 'business' && nw >= 200000) return { title: '대한민국 유니콘 기업 창업주', epitaph: '맨손으로 혁신을 일구어 시대를 선도하는 기업가로 남았습니다.' };
+      if (game.education.includes('SKY') && game.peakSalary >= 15000) return { title: 'SKY 출신 대한민국 핵심 엘리트', epitaph: '최고의 학벌과 실력으로 사회 핵심 리더의 자리를 지켰습니다.' };
+      if (nw >= 100000 && game.hasHouse) return { title: '서울 자가에 연금까지 갖춘 승리자', epitaph: '경제적 자유와 안정된 노후를 모두 쟁취한 성공한 인생입니다.' };
+      if (game.jobTier === 'civil') return { title: '국민을 위해 봉사한 청렴한 공직자', epitaph: '흔들리지 않는 사명감과 연금으로 평온한 일생을 보냈습니다.' };
+      if (game.age >= 95) return { title: '100세 시대를 완주한 무병장수 아이콘', epitaph: '한 세기를 온전히 살아내며 시대의 산증인이 되었습니다.' };
+      if (game.stats.happy >= 95) return { title: '행복지수 100%! 소확행의 달인', epitaph: '돈보다 값진 내면의 평화와 행복을 누리며 살았습니다.' };
+      if (!game.married && nw >= 100000) return { title: '화려한 골드 싱글 자산가', epitaph: '자유로운 영혼과 탄탄한 자산을 모두 누린 멋진 인생이었습니다.' };
+      if (game.married && game.children > 0 && game.age >= 75) return { title: '화목한 가정을 일군 대한민국의 가장', epitaph: '사랑하는 가족과 함께 묵묵히 인생의 황혼을 맞이했습니다.' };
+      if (game.jobTier === 'early_sme' && nw >= 80000) return { title: '고졸 신화를 쓴 현장 베테랑', epitaph: '학벌의 벽을 실력과 성실함으로 돌파한 자수성가형 인재입니다.' };
+      if (game.ruinedByCoin && nw < 0) return { title: '한강 물 온도 체크하러 간 야수', epitaph: '고배율 레버리지의 파도를 넘지 못하고 빚더미에 남았습니다.' };
+      if (nw < 0) return { title: '빚더미 속에서도 끝까지 버틴 생존자', epitaph: '경제적 풍파 속에서도 결코 삶을 포기하지 않고 끝까지 버텼습니다.' };
+      return { title: '묵묵히 제 몫을 다한 대한민국 소시민', epitaph: '거창한 타이틀은 없었으나, 누구보다 성실하고 값진 하루하루를 살았습니다.' };
     }
 
     function triggerEnding(cause) {
-      state.isDead = true;
-      state.deathCause = cause;
-      const evaluation = evaluateFinalTitle();
+      game.isDead = true;
+      game.deathCause = cause;
+      const evalRes = determineEndingTitle(cause);
 
-      // Switch screens
-      els.screenGame.classList.add('hidden');
-      els.screenEnding.classList.remove('hidden');
+      // Calculate earned Reincarnation Diamonds
+      const ageScore = game.age * 3;
+      const assetScore = Math.max(0, Math.floor(game.netWorth / 1000)) * 4;
+      const underdogBonus = (game.spoon.id === 'dirt' && game.netWorth >= 50000) ? 200 : 0;
+      const earnedDiamonds = Math.max(40, ageScore + assetScore + underdogBonus);
 
-      els.endCauseBadge.textContent = cause;
-      els.endSubTitle.textContent = `${state.name} (${state.region.name} · ${state.spoon.label} 출신)`;
-      els.endTitle.textContent = evaluation.title;
-      els.endEpitaph.textContent = evaluation.epitaph;
-      els.endFinalAge.textContent = `${state.age}세`;
-      els.endNetWorth.textContent = formatKRW(state.netWorth);
-      els.endPeakSalary.textContent = state.peakSalary > 0 ? `${formatKRW(state.peakSalary)}/년` : '근로소득 없음';
-      els.endCareerFamily.textContent = `${state.status} · ${state.married ? `기혼 (자녀 ${state.children}명)` : '싱글'}`;
+      meta.diamonds += earnedDiamonds;
+      if (!meta.unlockedTitles.includes(evalRes.title)) {
+        meta.unlockedTitles.push(evalRes.title);
+      }
+      saveMeta();
 
-      els.endMilestones.innerHTML = state.milestones
-        .slice(-6)
-        .map(m => `<li class="flex items-start gap-2"><span class="text-indigo-500">•</span><span>${m}</span></li>`)
-        .join('');
+      SoundFX.fanfare('SSR');
+      Confetti.burst(75);
 
-      saveToCollection(evaluation.title, cause);
+      document.getElementById('screenGame').classList.add('hidden');
+      document.getElementById('screenEnding').classList.remove('hidden');
+
+      document.getElementById('endCauseBadge').textContent = cause;
+      document.getElementById('endSubTitle').textContent = `${game.name} · ${game.region.name} · ${game.spoon.label} · ${game.talent.name}`;
+      document.getElementById('endTitle').textContent = `“${evalRes.title}”`;
+      document.getElementById('endEpitaph').textContent = evalRes.epitaph;
+      document.getElementById('endEarnedDiamonds').textContent = earnedDiamonds.toLocaleString();
+
+      document.getElementById('endFinalAge').textContent = `${game.age}세`;
+      document.getElementById('endNetWorth').textContent = formatKRW(game.netWorth);
+      document.getElementById('endPeakSalary').textContent = game.peakSalary > 0 ? `${formatKRW(game.peakSalary)}/년` : '소득 없음';
+      document.getElementById('endCareerFamily').textContent = `${game.status} · ${game.married ? `기혼(자녀 ${game.children}명)` : '싱글'}`;
+
+      document.getElementById('endMilestones').innerHTML = game.milestones.slice(-6).map(m =>
+        `<li class="flex items-start gap-2"><span class="text-indigo-400">•</span><span>${m}</span></li>`
+      ).join('');
     }
 
-    // 14. LocalStorage 인생 도감 관리
-    const STORAGE_KEY = 'kr_n_spoon_collection_v1';
+    /**
+     * 15. ENCYCLOPEDIA MODAL (24 RELICS + 20 TITLES)
+     */
+    let currentDexTab = 'relics';
 
-    function loadCollection() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-      } catch {
-        return [];
+    function renderEncyclopedia() {
+      const ownedCount = Object.keys(meta.ownedRelics).length;
+      const titleCount = meta.unlockedTitles.length;
+      document.getElementById('dexRelicCount').textContent = ownedCount;
+      document.getElementById('dexTitleCount').textContent = titleCount;
+
+      const listEl = document.getElementById('dexContentList');
+      if (currentDexTab === 'relics') {
+        listEl.innerHTML = RELIC_POOL.map(r => {
+          const lv = meta.ownedRelics[r.id] || 0;
+          return `
+            <div class="p-3 rounded-2xl border flex items-start gap-3 ${
+              lv > 0 ? `rarity-${r.rarity}` : 'bg-slate-950/70 border-slate-800/80 opacity-50'
+            }">
+              <div class="text-2xl">${lv > 0 ? r.icon : '❓'}</div>
+              <div class="flex-1">
+                <div class="flex items-center gap-1.5">
+                  ${getRarityBadgeHTML(r.rarity)}
+                  <span class="font-extrabold text-white">${lv > 0 ? r.name : '미해금 전생 유물'}</span>
+                  ${lv > 0 ? `<span class="text-[10px] font-black text-amber-300">Lv.${lv}</span>` : ''}
+                </div>
+                <p class="text-[11px] text-slate-300 mt-1">${lv > 0 ? r.desc : '전생의 업보 가챠에서 소환하여 해금할 수 있습니다.'}</p>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        listEl.innerHTML = ENDING_TITLES_DEX.map(t => {
+          const unlocked = meta.unlockedTitles.includes(t.title);
+          return `
+            <div class="p-3 rounded-2xl border flex items-center justify-between gap-2 ${
+              unlocked ? `rarity-${t.rarity}` : 'bg-slate-950/70 border-slate-800/80 opacity-55'
+            }">
+              <div>
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  ${getRarityBadgeHTML(t.rarity)}
+                  <span class="font-extrabold text-white">${unlocked ? t.title : '??? (미달성 칭호)'}</span>
+                </div>
+                <div class="text-[11px] text-slate-400">달성 조건: ${t.cond}</div>
+              </div>
+              <span class="text-xs font-black shrink-0 ${unlocked ? 'text-emerald-400' : 'text-slate-600'}">
+                ${unlocked ? '달성완료' : '잠김'}
+              </span>
+            </div>
+          `;
+        }).join('');
       }
     }
 
-    function saveToCollection(title, cause) {
-      const list = loadCollection();
-      list.unshift({
-        id: Date.now(),
-        name: state.name,
-        title,
-        spoon: state.spoon.label,
-        region: state.region.name,
-        age: state.age,
-        netWorth: formatKRW(state.netWorth),
-        cause,
-        date: new Date().toLocaleDateString('ko-KR')
-      });
-      // 최대 30개 보관
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 30)));
-      updateCollectionBadge();
-    }
-
-    function updateCollectionBadge() {
-      const list = loadCollection();
-      els.collectionBadge.textContent = list.length;
-    }
-
-    function renderCollectionModal() {
-      const list = loadCollection();
-      els.collectionSummaryText.textContent = `총 ${list.length}개의 인생 기록됨`;
-      if (list.length === 0) {
-        els.collectionList.innerHTML = `
-          <div class="text-center py-10 text-slate-400">
-            아직 기록된 인생 엔딩이 없습니다.<br/>첫 번째 인생을 완주해 도감을 채워보세요!
-          </div>
-        `;
-        return;
-      }
-      els.collectionList.innerHTML = list.map(item => `
-        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/70 dark:border-slate-800">
-          <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-            <span>${item.spoon} · ${item.region}</span>
-            <span>${item.date}</span>
-          </div>
-          <div class="font-extrabold text-sm text-slate-900 dark:text-white mb-1">${item.title}</div>
-          <div class="text-[11px] text-slate-600 dark:text-slate-300">
-            ${item.name} · 향년 ${item.age}세 · 최종 자산 <strong class="text-indigo-500">${item.netWorth}</strong>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // 15. 결과 텍스트 클립보드 복사 (document.execCommand 호환)
-    function copyShareSummary() {
-      if (!state) return;
-      const shareText = [
-        `🇰🇷 [대한민국 N수저 생존기] 인생 성적표`,
+    /**
+     * 16. SHARE CLIPBOARD & EVENT LISTENERS
+     */
+    document.getElementById('btnCopyShare').addEventListener('click', () => {
+      if (!game) return;
+      const text = [
+        `🎰 [대한민국 N수저 생존기: 환생 가챠 에디션]`,
         `━━━━━━━━━━━━━━━━━━`,
-        `👤 이름: ${state.name} (${state.region.name} / ${state.spoon.label})`,
-        `🏆 최종 칭호: ${els.endTitle.textContent}`,
-        `⏳ 향년: ${state.age}세 (${state.deathCause})`,
-        `💰 최종 순자산: ${formatKRW(state.netWorth)}`,
-        `💼 최고 연봉: ${state.peakSalary > 0 ? formatKRW(state.peakSalary) : '없음'}`,
+        `👤 ${game.name} (${game.region.name} / ${game.spoon.label} / ${game.talent.name})`,
+        `🏆 최종 칭호: ${document.getElementById('endTitle').textContent}`,
+        `⏳ 향년: ${game.age}세 (${game.deathCause})`,
+        `💰 최종 순자산: ${formatKRW(game.netWorth)}`,
+        `💼 최고 연봉: ${game.peakSalary > 0 ? formatKRW(game.peakSalary) : '없음'}`,
         `━━━━━━━━━━━━━━━━━━`,
-        `나도 대한민국 N수저로 환생해보기 👇`
+        `나도 환생 가챠 돌리고 인생 역전 도전하기 👇`
       ].join('\n');
 
-      const textarea = document.createElement('textarea');
-      textarea.value = shareText;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
       try {
         document.execCommand('copy');
+        SoundFX.coin();
         showToast('📋 인생 성적표가 클립보드에 복사되었습니다!');
-      } catch {
-        showToast('복사에 실패했습니다. 화면을 캡처해 공유해 주세요.');
+      } catch (e) {
+        showToast('복사에 실패했습니다. 화면을 캡처해 주세요!');
       }
-      document.body.removeChild(textarea);
-    }
-
-    // 16. 이벤트 리스너 바인딩
-    els.btnStartGame.addEventListener('click', () => {
-      state = createInitialState(els.inputPlayerName.value);
-      pendingEvent = null;
-      addLog(0, `${state.region.name}에서 ${state.spoon.label}로 태어났습니다. ${state.spoon.desc}`, true);
-
-      els.screenStart.classList.add('hidden');
-      els.screenEnding.classList.add('hidden');
-      els.screenGame.classList.remove('hidden');
-      renderUI();
+      document.body.removeChild(ta);
     });
 
-    els.btnNextYear.addEventListener('click', advanceOneYear);
+    // Navigation & Buttons
+    document.getElementById('tabLobbyPlay').addEventListener('click', () => switchLobbyTab('play'));
+    document.getElementById('tabLobbyGacha').addEventListener('click', () => switchLobbyTab('gacha'));
+    document.getElementById('btnSummon1').addEventListener('click', () => executeSummon(1));
+    document.getElementById('btnSummon10').addEventListener('click', () => executeSummon(10));
 
-    els.btnGiveUp.addEventListener('click', () => {
-      triggerEnding('스스로 인생 여정을 마무리함');
+    document.getElementById('btnOpenBirthSlot').addEventListener('click', openBirthSlotModal);
+    document.getElementById('btnConfirmBirth').addEventListener('click', startNewLife);
+
+    document.getElementById('tabGameLife').addEventListener('click', () => switchGameSubTab('life'));
+    document.getElementById('tabGameGamble').addEventListener('click', () => switchGameSubTab('gamble'));
+    document.getElementById('btnNextYear').addEventListener('click', advanceOneYear);
+
+    document.getElementById('btnGiveUp').addEventListener('click', () => {
+      triggerEnding('스스로 인생 여정을 마감함');
     });
 
-    els.btnReincarnate.addEventListener('click', () => {
-      els.screenEnding.classList.add('hidden');
-      els.screenGame.classList.add('hidden');
-      els.screenStart.classList.remove('hidden');
+    document.getElementById('btnBackToLobby').addEventListener('click', () => {
+      SoundFX.click();
+      document.getElementById('screenEnding').classList.add('hidden');
+      document.getElementById('screenGame').classList.add('hidden');
+      document.getElementById('screenLobby').classList.remove('hidden');
+      renderLobbyLoadout();
     });
 
-    els.btnCopyShare.addEventListener('click', copyShareSummary);
-
-    // Theme Toggle
-    els.btnToggleTheme.addEventListener('click', () => {
-      const html = document.documentElement;
-      const isDark = html.classList.toggle('dark');
-      els.themeIcon.textContent = isDark ? '☀️' : '🌙';
+    // Sound Toggle
+    document.getElementById('btnToggleSound').addEventListener('click', () => {
+      const on = SoundFX.toggle();
+      document.getElementById('soundIcon').textContent = on ? '🔊' : '🔇';
+      showToast(on ? '효과음이 켜졌습니다.' : '효과음이 꺼졌습니다.');
     });
 
-    // Collection Modal
-    els.btnOpenCollection.addEventListener('click', () => {
-      renderCollectionModal();
-      els.modalCollection.classList.remove('hidden');
+    // Encyclopedia Modal Events
+    document.getElementById('btnOpenEncyclopedia').addEventListener('click', () => {
+      SoundFX.click();
+      renderEncyclopedia();
+      document.getElementById('modalEncyclopedia').classList.remove('hidden');
     });
-    els.btnCloseCollection.addEventListener('click', () => {
-      els.modalCollection.classList.add('hidden');
+    document.getElementById('btnCloseEncyclopedia').addEventListener('click', () => {
+      document.getElementById('modalEncyclopedia').classList.add('hidden');
     });
-    els.btnClearCollection.addEventListener('click', () => {
-      localStorage.removeItem(STORAGE_KEY);
-      updateCollectionBadge();
-      renderCollectionModal();
-      showToast('인생 도감 기록이 초기화되었습니다.');
+    document.getElementById('dexTabRelics').addEventListener('click', () => {
+      currentDexTab = 'relics';
+      document.getElementById('dexTabRelics').className = 'py-1.5 rounded-lg text-xs font-extrabold bg-indigo-600 text-white cursor-pointer';
+      document.getElementById('dexTabTitles').className = 'py-1.5 rounded-lg text-xs font-extrabold text-slate-400 cursor-pointer';
+      renderEncyclopedia();
+    });
+    document.getElementById('dexTabTitles').addEventListener('click', () => {
+      currentDexTab = 'titles';
+      document.getElementById('dexTabTitles').className = 'py-1.5 rounded-lg text-xs font-extrabold bg-indigo-600 text-white cursor-pointer';
+      document.getElementById('dexTabRelics').className = 'py-1.5 rounded-lg text-xs font-extrabold text-slate-400 cursor-pointer';
+      renderEncyclopedia();
+    });
+    document.getElementById('btnResetAllData').addEventListener('click', () => {
+      localStorage.removeItem(META_STORAGE_KEY);
+      meta = { diamonds: 1000, pity: 0, ownedRelics: {}, equippedRelics: [], unlockedTitles: [] };
+      saveMeta();
+      renderLobbyLoadout();
+      renderEncyclopedia();
+      showToast('모든 도감 및 다이아 데이터가 초기화되었습니다.');
     });
 
-    // 초기화
-    updateCollectionBadge();
+    // Initialize App
+    loadMeta();
+    updateHeaderMetaUI();
+    renderLobbyLoadout();
   </script>
 </body>
 </html>
